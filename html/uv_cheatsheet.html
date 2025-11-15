@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "uv cheatsheet";</script>
+  <script type="text/javascript">var publication_date = "April 25, 2025";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script type="text/javascript" src="javascripts/blog_head.js"></script>
+    <style>
+      table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript" src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+        <p>
+          Install on macOS and linux:
+          <code>curl -LsSf https://astral.sh/uv/install.sh | sh </code>
+        </p>
+        <br>
+
+        <table style="width:100%">
+          <tr>
+            <th>old way</th>
+            <th>new way</th>
+          </tr>
+          </tr>
+          <tr>
+            <td><code>pyenv install 3.12</code> <br>
+            <code>pyenv versions</code></td>
+            <td><code>uv python install 3.12</code> <br>
+            <code>uv python list</code></td>
+          </tr>
+          <tr>
+            <td>
+            Manually create<br>
+            <code>&lt;script_name&gt;.py</code>
+              </td>
+            <td>
+            <code>uv init --script &lt;script_name&gt;.py</code>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Manually create<br>
+<pre>&lt;app_name&gt;/
+  ├─ pyproject.toml
+  ├─ .python-version
+  ├─ README.md
+  ├─ hello.py </pre>
+            </td>
+            <td> <code>uv init &lt;package_name&gt; </td>
+          </tr>
+          <tr>
+            <td>
+            Manually create<br>
+<pre>&lt;package_name&gt;/
+  ├─ pyproject.toml
+  ├─ .python-version
+  ├─ README.md
+  ├─ src/
+      ├─ &lt;package_name&gt;
+      ├─ __init__.py
+      ├─ py.typed</pre>
+            </td>
+            <td>
+              <code>uv init --lib &lt;package_name&gt;</code>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>pip install &lt;package&gt;</code>
+            </td>
+            <td>
+              <code>uv add &lt;package&gt;</code>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>python -m venv venv/</code><br>
+              <code>source venv/bin/activate</code><br>
+              <code>python3 &lt;script.py&gt;</code>
+            </td>
+            <td>
+              <code>uv run &lt;script.py&gt;</code>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>flake8</code><br>
+              <code>black</code><br>
+              <code>pytest</code>
+            </td>
+            <td>
+              <code>uvx ruff check</code><br>
+              <code>uvx ruff format</code><br>
+              <code>uvx pytest</code>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>python -m build</code><br>
+              <code>python -m twine upload</code>
+            </td>
+            <td>
+              <code>uv build</code><br>
+              <code>uv publish --TOKEN &lt;pypi_token&gt;</code>
+            </td>
+          </tr>
+        </table>
+
+        <script type="text/javascript" src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script type="text/javascript" src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

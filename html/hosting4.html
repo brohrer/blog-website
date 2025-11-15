@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Caring for your webserver";</script>
+  <script type="text/javascript">var publication_date = "September 27, 2025";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+In parts one through three, we
+<a href="hosting.html">set up a web server</a>,
+<a href="hosting2.html">connected it to a domain name</a>, and
+<a href="hosting3.html">instituted some basic security</a>.
+Now comes the fun part! The web server is humming along doing its thing,
+and we can watch and admire, making little improvements here and there.
+It’s not required, but for some, this is part of the payoff.
+</p>
+
+<h2><a id="A-webserver-needs-weeding-and-watering"></a><a href="#A-webserver-needs-weeding-and-watering">A webserver needs weeding and watering</a></h2>
+
+<p>
+It can be counterintuitive that a thing made out of code should need
+ongoing attention and care. On the surface it seems like it should be
+self-sufficient, like a wall made of stones.
+We put the pieces in place where we want them and when we’re happy with it, we stop.
+It's all silicon and bits after all, why should it need watching?
+</p>
+
+<p>
+The bigger picture, though, is that the web server operates in a world
+that’s always changing. Software updates cause tools to behave differently.
+Edits happen to the HTML and other content we host.
+There are dramatic changes in who is trying to reach the content
+and for what purposes. There can be outages, policy changes, and any
+number of second-order effects in the wider world that can make our
+web server stop operating the way we want. So on that scale a web server
+starts to more closely resemble a vegetable garden&mdash;something growing,
+decaying, and very much a product of the environment that it's in.
+</p>
+
+<p>
+This page is my notes on care and feeding practices I've found helpful
+and enjoyable. I'm not an expert on this, and this is not authoritative
+by any means. But I put it here in case you find it helpful. If I missed
+anything, or got it egregiously wrong, please let me know.
+</p>
+
+<h2><a id="Setting"></a><a href="#Setting">Setting</a></h2>
+
+<p>
+In these examples I'm working with a
+<a href="https://cloud.digitalocean.com">DigitalOcean droplet</a> at <code>138.197.69.146</code>
+hosting the content for the domain <code>brandonrohrer.com</code>. It's running
+an nginx server on Ubuntu 24.04.
+My local machine is a MacBook pro, where I'm working
+from the Terminal. My go-to text editor is vim, but you can use nano
+instead.  Adjust the snippets below for your situation.
+</p>
+
+<h2><a id="Browse-the-logs"></a><a href="#Browse-the-logs">Browse the logs</a></h2>
+
+<p>
+I've been curious about self-hosting for a while, but the thing that pushed
+me over the edge into migrating off Netlify was a desire to
+see which IP addresses were visiting which pages when. This information
+is all in the logs.
+</p>
+
+<p>
+Because I set up a server block specifically for my domain,
+the log files live in <code>/var/log/nginx/brandonrohrer.com/</code>.
+</p>
+
+<p>
+<code>access.log</code> has the main logs, and <code>error.log</code> keeps a log of when
+things go poorly.
+</p>
+
+<p>
+To browse the logs
+<pre>
+cat /var/log/nginx/brandonrohrer.com/access.log
+</pre>
+</p>
+
+<p>
+which gives something like
+</p>
+
+<p>
+<pre>
+49.51.195.195 - - [14/Sep/2025:08:20:50 -0400] "GET /hosting2 HTTP/1.1" 200 5957 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"
+183.98.90.239 - - [14/Sep/2025:08:20:50 -0400] "GET /images/ml_logo.png HTTP/1.1" 301 178 "https://www.brandonrohrer.com/blog.html" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+24.126.100.175 - - [14/Sep/2025:08:21:02 -0400] "GET /feed.xml HTTP/1.1" 304 0 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0"
+52.187.246.128 - - [14/Sep/2025:08:21:16 -0400] "GET /transformers.html HTTP/1.1" 200 36194 "-" "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot"
+</pre>
+</p>
+
+<p>
+or
+</p>
+
+<p>
+<pre>
+cat /var/log/nginx/brandonrohrer.com/error.log
+</pre>
+</p>
+
+<p>
+which gives errors like
+</p>
+
+<p>
+<pre>
+2025/09/14 00:37:00 [error] 187956#187956: *28044 access forbidden by rule, client: 78.153.140.50, server: brandonrohrer.com, request: "GET /.env.bak HTTP/1.1", host: "138.197.69.146"
+2025/09/14 00:37:00 [error] 187956#187956: *28045 access forbidden by rule, client: 78.153.140.50, server: brandonrohrer.com, request: "GET /mail/.env.db HTTP/1.1", host: "138.197.69.146"
+2025/09/14 00:37:01 [error] 187956#187956: *28046 access forbidden by rule, client: 78.153.140.50, server: brandonrohrer.com, request: "GET /dev/.env.old HTTP/1.1", host: "138.197.69.146"
+2025/09/14 00:37:01 [error] 187956#187956: *28047 access forbidden by rule, client: 78.153.140.50, server: brandonrohrer.com, request: "GET /crm/.env.bak HTTP/1.1", host: "138.197.69.146"
+</pre>
+</p>
+
+<p>
+Scanning through these for a few minutes can reveal some fascinating patterns,
+a few of which will pop up later in the post.
+</p>
+
+<h2><a id="Check-for-missed-pages"></a><a href="#Check-for-missed-pages">Check for missed pages</a></h2>
+
+<p>
+With a slight tweak, this command can pull out only the logs containing
+a "404", the http status code for Page Not Found. (It actually pulls out every
+log that has a 404 anywhere in it, but the majority of these are 
+page not found entries.)
+</p>
+
+<p>
+<pre>
+cat /var/log/nginx/brandonrohrer.com/access.log | grep 404
+</pre>
+</p>
+
+<p>
+This slice of the logs reveals files I don't have, but are normal to
+look for, like <code>/favicon.ico</code> and  <code>/.well-known/traffic-advice</code>. It
+also showed mistakes like a misspelled filename or a missing image.
+</p>
+
+<h2><a id="Catch-pages-without-the-<code>.html</code>"></a><a href="#Catch-pages-without-the-<code>.html</code>">Catch pages without the <code>.html</code></a></h2>
+
+<p>
+One of the first surprises I got was looking 404's in the logs was
+that visitors coming to my page looking for a page called
+<code>transformers.html</code> would be turned away if they only put in <code>transformers</code>.
+There were a lot of 404 log entries for misses of this sort. This was
+a bummer. These were people who are trying to visit my website but
+are being denied on a technicality.
+</p>
+
+<p>
+Luckily nginx makes it straightforward to fix this.
+I edited the file containing the server block
+</p>
+
+<p>
+<pre>
+sudo vi /etc/nginx/sites-available/brandonrohrer.com
+</pre>
+</p>
+
+<p>
+and changed the line that read
+</p>
+
+<p>
+<pre>
+try_files $uri $uri/ =404;
+</pre>
+</p>
+
+<p>
+so that it read
+</p>
+
+<p>
+<pre>
+try_files $uri $uri.html $uri/ =404;
+</pre>
+</p>
+
+<p>
+When nginx parses the webpage being requested, <code>$uri</code> is the variable
+containing the page name. The modified line instructs the server to
+first try the exact page name requested, then to try it with a <code>.html</code>
+tagged onto the end, then to try it with a backslash on the end, and if
+none of those turn anything up, return a 404 page not found error.
+</p>
+
+<p>
+After making this change (or any of the other changes described below)
+it's important to first test that we didn't goober anything up
+</p>
+
+<p>
+<pre>
+sudo nginx -t
+</pre>
+</p>
+
+<p>
+and if our change passes the test and nginx is happy with it, then restart
+nginx so that the change takes effect
+</p>
+
+<p>
+<pre>
+sudo systemctl restart nginx
+</pre>
+</p>
+
+<h2><a id="Redirects"></a><a href="#Redirects">Redirects</a></h2>
+
+<p>
+In addition to accounting for missing html extensions, I've found it helpful
+to automatically expand short names into longer ones.
+For example, <code>numba</code> automatically redirects to <code>numba_tips.html</code>.
+It's also good for fixing typos in published pages. I've
+redirected <code>statistics_resources.html</code> to <code>stats_resources.html</code> because
+I shared the wrong URL in a publication.
+</p>
+
+<p>
+I also use it as a link shortener, so that <code>fnc</code> actually points to a pdf
+in a codeberg repository and <code>bp</code> redirects to a video about
+backpropagation on youtube. For the record, <code>brandonrohrer.com</code> is a
+terrible domain name for a link shortener. I also picked up <code>tyr.fyi</code>
+as a shorter domain for when I want erally short links.
+</p>
+
+<p>
+https://www.digitalocean.com/community/tutorials/nginx-rewrite-url-rules
+</p>
+
+<p>
+Redirects are implemented in the domain's server block.
+</p>
+
+<p>
+<pre>
+sudo vi /etc/nginx/sites-available/brandonrohrer.com
+</pre>
+</p>
+
+<p>
+Add a line like this within the server block.
+</p>
+
+<p>
+<pre>
+location = /numba {
+    return 301 $scheme://brandonrohrer.com/numba_tips.html;
+}
+</pre>
+</p>
+
+<p>
+This instruction tells the server to look for a request that looks like
+<code>brandonrohrer.com/numba</code> and forwards the request to 
+<code>brandonrohrer.com/numba_tips.html</code>. <code>$scheme</code> preserves the <code>http</code> or
+<code>https</code>, whatever was used in the original request.
+</p>
+
+<p>
+Similarly, these lines take any request  like <code>brandonrohrer.com/bp</code>
+and redirect it toward a specific video URL.
+</p>
+
+<p>
+<pre>
+location = /bp {
+    return 301 https://www.youtube.com/watch?v=6BMwisTZFr4;
+}
+</pre>
+</p>
+
+<h3><a id="Location-blocks"></a><a href="#Location-blocks">Location blocks</a></h3>
+
+<p>
+Redirects are an example of what can be done with location blocks.
+They can also be used to rewrite requests, or block access.
+</p>
+
+<p>
+In addition to exact matching on page names, location blocks can match
+on partial names, directories, and regex-specified patterns.
+They give fine grained control for how individual pages are accessed
+and even which IP addresses are allowed to access them, but they
+can quickly become complicated. Individual requests can match multiple
+location blocks, and the match is not determined on a first-come,
+first-served bases, but rather based on a set of rules. Use with due caution.
+The DigitalOcean <a href="https://www.digitalocean.com/community/tutorials/understanding-nginx-server-and-location-block-selection-algorithms">docs on how location blocks get matched</a>
+are a great resource if you want to dig into this.
+</p>
+
+<h2><a id="Set-up-log-rotation"></a><a href="#Set-up-log-rotation">Set up log rotation</a></h2>
+
+<p>
+By default, access logs are stored in <code>access.log</code> and error logs are
+stored in <code>error.log</code> and those files just keep getting longer and longer.
+I find it really helpful to have one an automatic log rotation in place
+where each file contains just one day's access logs or errors. Todays
+are called <code>access.log</code> and <code>error.log</code>, yesterday's are
+<code>access.log.1</code> and <code>error.log.1</code>, and the day before that
+<code>access.log.2</code>, et cetera, covering the last couple of weeks.
+(Starting at day 2 they are also gzipped.) There is
+<a href="https://www.digitalocean.com/community/tutorials/how-to-configure-logging-and-log-rotation-in-nginx-on-an-ubuntu-vps#managing-a-log-rotation">a great guide</a>
+to setting this up in the DO docs. The meat of the setup involves
+modifying the file <code>/etc/logrotate.d/nginx</code>
+</p>
+
+<p>
+After modifying it, this is what my log rotation config looks like
+</p>
+
+<p>
+<pre>
+/var/log/nginx/brandonrohrer.com/*.log {
+	daily
+	missingok
+	rotate 14
+	compress
+	delaycompress
+	notifempty
+	create 0644 www-data adm
+	sharedscripts
+	prerotate
+		if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
+			run-parts /etc/logrotate.d/httpd-prerotate; \
+		fi \
+	endscript
+	postrotate
+		invoke-rc.d nginx rotate >/dev/null 2>&1
+	endscript
+}
+</pre>
+</p>
+
+<h2><a id="Find-a-content-provider-for-larger-files"></a><a href="#Find-a-content-provider-for-larger-files">Find a content provider for larger files</a></h2>
+
+<p>
+If you start offering files larger than a couple megabytes and you start
+getting more than a handful of views per day, your bandwidth requirements
+can climb quickly. One way around this is to keep your large files like
+video, audio, and big images, and other beefy files somewhere other than your
+web server. 
+</p>
+
+<p>
+There are several services that offer image, audio, and video hosting, and
+some of them have free tiers. YouTube is a popular option for hosting vides,
+but I find ads and irrelevant recommendations so annoying that I've paid
+a few dollars for a bottom-tier Vimeo account. I don't do a lot of
+audio-only content, so no recommendations there. My biggest bandwidth
+hog is my image catalog. I explored using a content hosting service for them
+but wasn't interested in all the bells and whistles. I eventually settled
+on abusing GitHub as a hosting service. There seem to be no limitations
+on repository size, no throttling on bandwidth (at least at the scales
+I'm using it for) and I'm OK with the trade-off of free hosting in
+exchange for giving Microsoft unfettered access to my images.
+</p>
+
+<p>
+As a result the bandwidth from my server tends to settle around 10 kB/s
+on average, while serving a few thousand page views per day. It helps me
+keep my hosting costs low.
+</p>
+
+<p>
+<img alt="The baseline bandwidth of the webserver has an average of about 10 kb/s
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/baseline_bandwidth.png">
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

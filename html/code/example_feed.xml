@@ -1,0 +1,22 @@
+<rss version="2.0">
+  <channel>
+    <title>Your Feed</title>
+    <link>https://www.brandonrohrer.com</link>
+    <description>Your Blog's name</description>
+
+    <item>
+      <title>Blog title</title>
+      <link>https://www.brandonrohrer.com/rss.html</link>
+      <pubDate>Sat, 16 Aug 2025 12:31:00 EDT</pubDate>
+      <guid isPermaLink="false">https://www.brandonrohrer.com/rss.html.04</guid>
+      <description><![CDATA[
+        <h1>Post content</h1>
+        <p>
+          This can be any html.
+        </p>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/9/97/Winnie-the-Pooh_45-1.png">
+      ]]></description>
+    </item>
+
+  </channel>
+</rss>

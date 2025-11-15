@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Write an HTTP client in Python";</script>
+  <script type="text/javascript">var publication_date = "December 23, 2024";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script type="text/javascript" src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript" src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+<h2>Why bother with HTTP?</h2>
+<p>There are a lot of reasons you might want to get two computers talking
+to each other,
+and HTTP is a good way to make this happen. It's used to share web pages
+of course (the name "hypertext transfer protocol" describes
+this use case directly) but it can be used to share all kinds of other
+data too&mdash;all varieties of text, image, audio, and video formats.
+Just imagine all the shenanigans you can orchestrate with this power.</p>
+
+<p>In the world of computer networking
+getting computers talking the same language (a.k.a. protocol)
+is the first step. Some protocols are very niche, intended for tasks
+like reading oxygen sensors in combustion engines or controlling the
+environment in office buildings. In contrast, HTTP is a general
+purpose networking protocol. It pays the price of longer messages
+and a more complex standard in order to fill lots of different needs.
+It's a Swiss Army knife rather than a scalpel. It is said that Python
+is the second-best programming language for every task.
+The same could be said about HTTP for networking.</p>
+
+<p>
+This post is an attempt to give some guide posts through the terrain,
+but the world of HTTP is wide and has a lot of history and hidden
+corners. Everything written here is oversimplified, and some of it
+is probably wrong, but I hope you find it useful.
+</p>
+
+<h2>Clients and servers,<br>requests and responses</h2>
+<p>When two computers talk using HTTP, one is always the client
+and the other is the server. The client initiates the conversation
+by sending a specific message with a specific format called a request.
+The server takes that request, does whatever it is that the
+server needs to do, and replies with another specific message
+format called a response. (If you're looking for a post on how
+to write an HTTP server,
+<a href="https://www.brandonrohrer.com/http_server.html">check here</a>.)</p>
+<p>Request messages have three parts</p>
+<ol>
+<li>a request to do something</li>
+<li>some headers</li>
+<li>a body, also called a payload</li>
+</ol>
+<p>Response messages also have three parts</p>
+<ol>
+<li>a status report</li>
+<li>some headers</li>
+<li>a body (payload)</li>
+</ol>
+<p>If you are writing a client, you'll need to take care
+of composing requests and interpreting responses. The opposite is true
+if you are writing a server.</p>
+
+<h2>Some Python</h2>
+<p>Here's an example that will showcase the building blocks.
+It's an HTTP client that calls a server that performs addition.</p>
+<pre><code>from http.client import HTTPConnection
+import json
+
+host = "192.168.1.42"
+port = 8000
+conn = HTTPConnection(host, port)
+
+def call_addition_server(a, b):
+    body_dict = {"val_a": a, "val_b": b}
+    body = json.dumps(body_dict).encode('utf-8')
+    headers = {
+        'Content-Type': 'application/json',
+        'Content-Length': len(body),
+    }
+    conn.request("GET", "/", body, headers)
+
+    response = conn.getresponse()
+    if response.status == 200:
+        content_length = int(response.getheader('Content-Length'))
+        return json.loads(response.read(content_length).decode('utf-8'))
+
+
+if __name__ == "__main__":
+    a = 25
+    b = 13
+    print(call_addition_server(a, b))
+</code></pre>
+<p>Starting from the imports</p>
+<pre><code>from http.client import HTTPConnection
+</code></pre>
+<p>the <code>HTTPConnection</code> class from the
+<a href="https://docs.python.org/3/library/http.client.html">
+http.client library</a> is immensely helpful for creating
+requests and interpreting responses. In the client it's only
+directly called when creating the connection to the server.</p>
+<pre><code>host = "192.168.1.20"
+port = 8000
+conn = HTTPConnection(host, port)
+</code></pre>
+<p><code>HTTPConnection</code>
+expects a host name, like <code>en.wikipedia.org</code>
+or <code>192.168.0.1</code> and an optional port number,
+although it will default to port 80, the default http port
+of the internet, if no port is supplied. The server needs to be
+running and reachable or else an attempt to connect with it will
+generate a <code>ConnectionRefusedError</code>.</p>
+
+<h2>Request body</h2>
+<p>HTTP connections can carry a bewildering array of data types,
+but if you have to choose just one, Python dictionaries are
+an excellent choice. They are good vehicles for carrying
+collections of input and output arguments.</p>
+<p>The challenge with using dictionaries is getting them
+transformed into a format that can be transferred
+over the connection. There are several steps to the process</p>
+<pre><code>dict -> json -> string -> bytes
+</code></pre>
+<p>In code, this can be done in a one-liner:</p>
+<pre><code>body = json.dumps(body_dict).encode('utf-8')
+</code></pre>
+<p>Dictionary to JSON and JSON to string conversion is trivial,
+thanks to the <code>json</code> library. <code>json.dumps()</code>
+is short for "take this Python dictionary, parse it and
+convert it to JSON, then dump that JSON out to
+a stringified version."</p>
+<p>Gotchas:</p>
+<ul>
+<li>This is not the same as <code>str(body_dict)</code>.
+If you try this, you will get confusing errors.
+(Ask me how I know.)</li>
+<li>Numpy arrays don't mix well with JSON.
+They also give confusing errors.
+If you want to include arrays in your dict,
+first convert them to lists with <code><np.array>.tolist()</code>.
+You can convert them back on the other end with
+<code>np.array(<list&g>)</code>.</li>
+</ul>
+<p>String to bytes conversion can be done with the
+<code>.encode('utf-8')</code> appended on the end of the line.
+There are several ways to encode string data as bytes but
+<a href="https://en.wikipedia.org/wiki/UTF-8"><code>utf-8</code></a>
+has become far and away the most common, particularly in HTTP use cases.
+Unless you have a good reason to do otherwise,
+you're safe to use this throughout your clients and servers.</p>
+
+<h2>Request headers</h2>
+<p>In Python, we're used to playing fast and loose with data types
+and memory allocation, but in HTTP we can't get away with that any more.
+You can't even assume that you know what language the server
+on the other side of the connection is written in,
+let alone what types or message size it is expecting.
+As with all relationships, the answer to this challenge
+is good communication. HTTP gives clients a way to signal ahead
+what type of data they will be sending and how much of it.
+That way there are no misunderstandings.</p>
+
+<p>Headers are the pre-message that give this meta-information.
+They are a short instruction manual, a packing manifest.
+In the example code above it includes two fields,
+one declaring the type of data and one declaring
+the number of bytes being transferred.</p>
+<pre><code>headers = {
+    'Content-Type': 'application/json',
+    'Content-Length': len(body),
+}
+</code></pre>
+
+<p><code>Content-Type</code> and <code>Content-Length</code> are
+a nice miminal set of headers, but there are lots others.
+<a href="https://en.wikipedia.org/wiki/List_of_HTTP_header_fields">
+The full list of headers</a> shows just how varied the set
+of instructions and information passed to the server can be.
+Header field names are not case sensitive, so you may run
+across a variety of capitalization conventions here.</p>
+
+<h2>Content type</h2>
+<p>JSON is a good multi-purpose message format, but except
+for the times when you are writing your own server,
+you'll have to provide a content type that the server expects.</p>
+
+<p>Another extremely common content type is <code>text/html</code>,
+used for sharing web pages, arguably the main use case
+for which the <em>hypertext transfer</em> protocol was developed.</p>
+
+<p>In addition to these there are a lot of other types.
+So many. Literally
+<a href="https://www.iana.org/assignments/media-types/media-types.xhtml">
+hundreds of them</a>. Looking at just some of the text formats,
+there are specific types for</p>
+
+<ul>
+<li><code>text/css</code></li>
+<li><code>text/csv</code></li>
+<li><code>text/javascript</code></li>
+<li><code>text/plain</code></li>
+<li><code>text/xml</code></li>
+</ul>
+
+<p>and besides these there are many others for varieties of
+image, audio, video, email message, and application content.</p>
+
+<p>Luckily you don't have to guess. If you're writing a client
+for a server, you can look at the API specification for it
+to find out what content type it's expecting.</p>
+
+<h2>The action (The VERB)</h2>
+<p>Requests are also sent with
+<a href="https://en.wikipedia.org/wiki/HTTP#Request_methods">an action</a>
+attached, such as <code>GET</code> or <code>POST</code>,
+clearly inspired by common operations in serving web pages.</p>
+
+<p>GET can be interpreted very broadly as any operation where
+the client is hoping to get something back, like a web page,
+the output of a computation, the result of a database query,
+or the output of a model. But GET requests are not just
+one-way flows of information. They can be accompanied by
+hefty payloads like input arguments, feature values, and database queries.</p>
+
+<p>Similarly POST operations are typically upload-heavy,
+but they can have generouts response payloads too.</p>
+
+<p>Any public API worth its salt will have detailed documentation
+of which actions it accepts, what the payloads look like,
+and if you're really lucky, a few examples.</p>
+
+<h2>The path</h2>
+<p>The final piece of the puzzle is the path.
+The path argument gets top billing, its own reserved seat
+on the front row, rather than being tucked away in
+an argument in the body. This illustrates the original purpose of HTTP.
+With web serving, most requests are for an html file,
+and the path argument specifies which file that should be.</p>
+
+<p>Whenever a request is intented to retrieve, upload, modify,
+or otherwise touch a particular file, the path argument is the path
+to that file, relative to the directory from which the server is running.
+If I wanted to send a request to the webserver for
+<code>brandonrohrer.com</code> to retrieve the <code>blog.html</code> file
+which sits at the top level of the webserver's directory,
+then the path argument would be <code>/blog.html</code>.</p>
+
+<p>If the server doesn't need path information, it's fine to leave
+the path argument as a benign <code>/</code>,
+as in the code example above.</p>
+
+<p>Again, a public API will usually document what the path
+should be for any given content, resource, or action.</p>
+
+<h2>Putting it all together</h2>
+<p>Now that the header, the body, the action, and the path are sorted,
+they can be sent to the server using the
+<a href="https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.request">
+<code>request()</code></a> function, which kicks off
+the request processing</p>
+
+<pre><code>conn.request("GET", "/", body, headers)
+</code></pre>
+
+<p>and the response can be retrived with
+<a href="https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.getresponse">
+<code>getresponse()</code></a></p>
+<pre><code>response = conn.getresponse()
+</code></pre>
+
+<p>And this completes the journey of formulating and submitting the request.
+Huzzah!</p>
+
+<h2>Interpreting the response from the server</h2>
+<p>Unpacking the server response looks a lot like composing the request,
+in reverse. Responses come in the form of a
+<a href="https://docs.python.org/3/library/http.client.html#httpresponse-objects">
+HTTPResponse object</a>
+which saves us the trouble of fiddly parsing and has some helpful
+fields and methods for pulling out the information we need:
+a status report, response headers, and the response body.
+These three parts all show up in the example code.</p>
+<pre><code>if response.status == 200:
+    content_length = int(response.getheader('Content-Length'))
+    return json.loads(response.read(content_length).decode('utf-8'))
+</code></pre>
+
+<h2>Response status</h2>
+<p>Every HTTP response comes with
+<a href="https://en.wikipedia.org/wiki/List_of_HTTP_status_codes">
+a numerical code</a> telling how it went.
+Status codes are 3 digits long with the first digit being 1, 2, 3, 4, or 5.
+From the Wikipedia page:</p>
+<ul>
+<li><strong>1xx informational response</strong> – the request was received, continuing process</li>
+<li><strong>2xx successful</strong> – the request was successfully received, understood, and accepted</li>
+<li><strong>3xx redirection</strong> – further action needs to be taken in order to complete the request</li>
+<li><strong>4xx client error</strong> – the request contains bad syntax or cannot be fulfilled</li>
+<li><strong>5xx server error</strong> – the server failed to fulfil an apparently valid request</li>
+</ul>
+<p>Or abbreviated:</p>
+<ul>
+<li>1xx: FYI </li>
+<li>2xx: A-OK</li>
+<li>3xx: We moved</li>
+<li>4xx: You messed up</li>
+<li>5xx: We messed up</li>
+</ul>
+<p>and I cannot recommend strongly enough the
+<a href="https://httpstatusdogs.com">HTTP status dogs</a>
+who illustrate every status code for pup-loving visual learners.</p>
+
+<p>Code 200 is the signal that everything went well, and the client
+code above checks for that before trying to process the response.
+A more robust client would check for other codes, especially 5xx codes,
+and have fallback strategies and informative error messages.</p>
+
+<h2>Response headers</h2>
+<p>Just like request headers, response headers carry
+the information needed to handle the message. The list of common
+<a href="https://en.wikipedia.org/wiki/List_of_HTTP_header_fields#Response_fields">
+response headers</a> is extensive. Again <code>Content-Type</code>
+and <code>Content-Length</code> are particularly useful.
+They tell what type of message body is expected and how large it is.</p>
+
+<p>The <code>getheader()</code> method pulls out the value
+of a given header field. There is also a <code>getheaders()</code>
+method which lists all the available headers.
+This one is extra useful for exploring undocumented API behavior.</p>
+
+<h2>Reponse body</h2>
+<p>Not every response has a body, but if it does, the
+<code>read()</code> method is the way to pull those payload bytes
+out and start working with them. <code>read(content_length)</code>
+reads a fixed number of bytes and will wait, listening on the line
+until the specified number of bytes have been received.
+If you trust your sever to provide one, you can call <code>read()</code>
+without a number of bytes and it will keep reading until it finds
+an <code>EOF</code> character.</p>
+
+<p>Almost every time, the first step is to decode the content with
+<code>decode('utf-8')</code> to get a string. And then, if it happens
+to be content type of <code>application/json</code> you can
+finish backing out the response content by calling
+<code>json.loads()</code>. This loads the string as a JSON object,
+then converts that JSON to a dictionary. The content of
+the dictionary (or whatever form the response happens to be)
+depends entirely on the server.</p>
+
+<h2>A quick note on levels of abstraction</h2>
+
+There are several different tools for interacting with HTTP servers
+in Python. They are at different levels of abstraction, that is,
+they make different assumptions about what the person writing the code
+is supposed to know; they're at different levels of down-in-the-weeds.
+Typically the higher the level of abstraction, the more assumptions
+are made behind the scenes and the fewer lines of code necessary to
+get the job done.
+
+Very roughly from highest to lowest level:
+<ul>
+<li><a href="https://pypi.org/project/urllib3/">urllib3</a></li>
+<li><a href="https://docs.python-requests.org/en/latest/index.html">requests</a></li>
+<li><a href="https://docs.python.org/3/library/http.client.html">http.client</a></li>
+<li><a href="https://docs.python.org/3/library/socket.html">socket</a></li>
+</ul>
+
+I've chosen to run with <code>http.client</code> here because I'm interested in
+having (and giving) a lot of control and covering a lot of potential
+networking use cases. Also, <code>http.client</code> has a lot of symmetry with
+<code>http.server</code>, which will feature in a companion post.
+<br>
+<br>
+<p>
+This concludes the tour of a bare-bones HTTP Python client.
+This has only scratched the surface of a huge topic, but hopefully
+it will get you unstuck as you are coding up your first few
+clients in Python.
+</p>
+<p>
+Stay tuned for the sequel, the tour of a bare-bones HTTP Python server.
+</p>
+        <script type="text/javascript" src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script type="text/javascript" src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

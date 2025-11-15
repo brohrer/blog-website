@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "vim syntax highlighting for .md files";</script>
+  <script type="text/javascript">var publication_date = "November 12, 20204";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script type="text/javascript" src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript" src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+<h1>How do I get good vim syntax highlighting on a .md file?</h1>
+<p>By default vim doesn&#39;t recognize <code>.md</code> files, but it does recognize <code>.markdown</code>.</p>
+<p>To make vim recognize <code>.md</code>, add this line to your <code>~/.vimrc</code></p>
+<pre><code class="language-bash">au BufNewFile,BufFilePre,BufRead *.md set filetype=markdown
+</code></pre>
+<p>If you want to dog deeper, you can read through the vim file for parsing markdown .</p>
+<pre><code>:e $VIMRUNTIME/syntax/markdown.vim
+</code></pre>
+<p>It shows how markdown semantic categories are mapped to highlighting groups</p>
+<pre><code>hi def link markdownH1                    htmlH1
+hi def link markdownH2                    htmlH2
+hi def link markdownH3                    htmlH3
+hi def link markdownH4                    htmlH4
+hi def link markdownH5                    htmlH5
+hi def link markdownH6                    htmlH6
+hi def link markdownHeadingRule           markdownRule
+hi def link markdownH1Delimiter           markdownHeadingDelimiter
+hi def link markdownH2Delimiter           markdownHeadingDelimiter
+hi def link markdownH3Delimiter           markdownHeadingDelimiter
+hi def link markdownH4Delimiter           markdownHeadingDelimiter
+hi def link markdownH5Delimiter           markdownHeadingDelimiter
+hi def link markdownH6Delimiter           markdownHeadingDelimiter
+hi def link markdownHeadingDelimiter      Delimiter
+hi def link markdownOrderedListMarker     markdownListMarker
+hi def link markdownListMarker            htmlTagName
+hi def link markdownBlockquote            Comment
+hi def link markdownRule                  PreProc
+
+hi def link markdownFootnote              Typedef
+hi def link markdownFootnoteDefinition    Typedef
+
+hi def link markdownLinkText              htmlLink
+hi def link markdownIdDeclaration         Typedef
+hi def link markdownId                    Type
+hi def link markdownAutomaticLink         markdownUrl
+hi def link markdownUrl                   Float
+hi def link markdownUrlTitle              String
+hi def link markdownIdDelimiter           markdownLinkDelimiter
+hi def link markdownUrlDelimiter          htmlTag
+hi def link markdownUrlTitleDelimiter     Delimiter
+
+hi def link markdownItalic                htmlItalic
+hi def link markdownItalicDelimiter       markdownItalic
+hi def link markdownBold                  htmlBold
+hi def link markdownBoldDelimiter         markdownBold
+hi def link markdownBoldItalic            htmlBoldItalic
+hi def link markdownBoldItalicDelimiter   markdownBoldItalic
+hi def link markdownCodeDelimiter         Delimiter
+
+hi def link markdownEscape                Special
+hi def link markdownError                 Error
+</code></pre>
+<p>The <a href="https://vimdoc.sourceforge.net/htmldoc/syntax.html">vim documentation</a><br>on syntax lists some common system colors</p>
+<pre><code>Red		LightRed	DarkRed
+Green	LightGreen	DarkGreen	SeaGreen
+Blue	LightBlue	DarkBlue	SlateBlue
+Cyan	LightCyan	DarkCyan
+Magenta	LightMagenta	        DarkMagenta
+Yellow	LightYellow	Brown		DarkYellow
+Gray	LightGray	DarkGray
+Black	White
+Orange	Purple		Violet
+</code></pre>
+<p>Most of these worked on my system (Ubuntu 20.04), but not all.</p>
+<p>To <code>~/.vimrc</code> add lines to change syntax highlighting based on semantic category.</p>
+<p><code>cterm</code> (color terminal format) can be <code>none</code> or <code>bold</code> or <code>italic</code> or <code>bold, italic</code></p>
+<p><code>ctermfg</code> (color terminal foreground) is the color of the text itself.</p>
+<p><code>ctermbg</code> (color terminal backgroun) is the highlighting color.</p>
+<p><code>gui</code>, <code>guifg</code>, <code>guibg</code> are the corresponding values for gui mode, but I never use this.</p>
+<p>Here are some values I like.</p>
+<pre><code>highlight ColorColumn                                       ctermbg=16
+highlight Delimiter                       ctermfg=DarkGray
+highlight htmlH1             cterm=bold   ctermfg=Blue
+highlight htmlH2             cterm=bold   ctermfg=Blue
+highlight htmlH3             cterm=bold   ctermfg=Blue
+highlight htmlH4             cterm=bold   ctermfg=Blue
+highlight markdownCode       cterm=none   ctermfg=DarkCyan
+highlight markdownCodeBlock  cterm=none   ctermfg=DarkCyan
+</code></pre>
+
+        <script type="text/javascript" src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script type="text/javascript" src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Working with audio files in Python";</script>
+  <script type="text/javascript">var publication_date = "August 13, 2025";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+Converting audio files from formats you can listen to, store, transmit,
+and analyze can be migraine-inducing (at least for me) so here are
+some shortcuts that work for getting all that done (at least for me).
+</p>
+
+<p>
+<a href="https://github.com/brohrer/blog/blob/main/code/audio.py">Here is a runnable script</a>
+demonstrating all the snippets below.
+</p>
+
+<h3><a id="Libraries"></a><a href="#Libraries">Libraries</a></h3>
+
+<p>
+There is a vibrant and confusing landscape of libraries and tools for
+working with audio in Python.
+</p>
+
+<p>
+One pair that has worked well for me is <code>soundfile</code> and <code>simpleaudio</code>.
+They cover the tasks I need to do, and have licenses that allow me to use
+them in code at work.
+</p>
+
+<p>
+<a href="https://python-soundfile.readthedocs.io/">soundfile</a> is an open source
+tool for manipulating audio files, released under the
+<a href="https://en.wikipedia.org/wiki/BSD_licenses">BSD 3-clause license</a>.
+The <a href="https://github.com/bastibe/python-soundfile">source code</a> is browsable.
+</p>
+
+<p>
+<a href="https://simpleaudio.readthedocs.io/en/latest/index.html">simpleaudio</a> is an
+<a href="https://en.wikipedia.org/wiki/MIT_License">MIT Licensed</a> cross-platform
+library for playing turning audio files into phyiscal vibrations of the air.
+</p>
+
+<p>
+<pre>import simpleaudio as sa
+import soundfile as sf</pre>
+</p>
+
+<h3><a id="Read-an-.mp3-to-a-Numpy-array"></a><a href="#Read-an-.mp3-to-a-Numpy-array">Read an .mp3 to a Numpy array</a></h3>
+
+<p>
+<pre>audio_data, samplerate = sf.read(mp3_filename)</pre>
+</p>
+
+<h3><a id="Write-a-Numpy-array-to-an-.mp3-file."></a><a href="#Write-a-Numpy-array-to-an-.mp3-file.">Write a Numpy array to an .mp3 file.</a></h3>
+
+<p>
+<pre>sf.write(mp3_filename, audio_data, samplerate)</pre>
+</p>
+
+<h3><a id="Convert-a-Numpy-array-to-a-string-of-.mp3-formatted-bytes."></a><a href="#Convert-a-Numpy-array-to-a-string-of-.mp3-formatted-bytes.">Convert a Numpy array to a string of .mp3-formatted bytes.</a></h3>
+
+<p>
+<pre>mp3_buf = io.BytesIO()
+mp3_buf.name = 'file.mp3'
+sf.write(mp3_buf, audio_data, samplerate)
+mp3_buf.seek(0)  # Necessary for read() to return all bytes
+mp3_bytes = mp3_buf.read()</pre>
+</p>
+
+<p>
+An <code>mp3_buf</code> name that ends in <code>.mp3</code> is important because soundfile
+infers file type from the filename extension.
+</p>
+
+<h3><a id="Convert-a-string-of-.mp3-formatted-bytes-to-a-Numpy-array."></a><a href="#Convert-a-string-of-.mp3-formatted-bytes-to-a-Numpy-array.">Convert a string of .mp3-formatted bytes to a Numpy array.</a></h3>
+
+<p>
+<pre>new_mp3_buf = io.BytesIO(mp3_bytes)
+new_mp3_buf.name = 'new_file.mp3'
+new_audio_array, new_samplerate = sf.read(new_mp3_buf)</pre>
+</p>
+
+<h3><a id="Convert-a-string-of-bytes-to-a-base64-encoded-ASCII-string."></a><a href="#Convert-a-string-of-bytes-to-a-base64-encoded-ASCII-string.">Convert a string of bytes to a base64-encoded ASCII string.</a></h3>
+
+<p>
+<pre>base64_mp3_bytes = base64.b64encode(mp3_bytes)
+base64_mp3_string = base64_mp3_bytes.decode("ascii")</pre>
+</p>
+
+<h3><a id="Convert-a-base64-encoded-ASCII-string-to-a-string-of-bytes."></a><a href="#Convert-a-base64-encoded-ASCII-string-to-a-string-of-bytes.">Convert a base64-encoded ASCII string to a string of bytes.</a></h3>
+
+<p>
+<pre>new_base64_mp3_bytes = base64_mp3_string.encode("ascii")
+new_mp3_bytes = base64.b64decode(new_base64_mp3_bytes)</pre>
+</p>
+
+<h3><a id="Other-file-types"></a><a href="#Other-file-types">Other file types</a></h3>
+
+<p>
+soundfile can work with other filetypes in the same way including
+.wav, .flac, and .ogg.
+</p>
+
+<h3><a id="Normalize-Numpy-data-for-simpleaudio-playback"></a><a href="#Normalize-Numpy-data-for-simpleaudio-playback">Normalize Numpy data for simpleaudio playback</a></h3>
+
+<p>
+This ensures that the playback takes advantage of the full range of
+the audio playback volume. It doesn't try to push too hard and overdrive,
+but it also doesn't leave range unused.
+<a href="https://simpleaudio.readthedocs.io/en/latest/tutorial.html#using-numpy">From the docs</a>:
+</p>
+
+<p>
+<pre>audio_array = data * 32767 / max(abs(data))
+audio_array = audio_array.astype(np.int16)</pre>
+</p>
+
+<h3><a id="Play-audio-from-a-Numpy-array"></a><a href="#Play-audio-from-a-Numpy-array">Play audio from a Numpy array</a></h3>
+
+<p>
+<a href="https://simpleaudio.readthedocs.io/en/latest/simpleaudio.html#simpleaudio.play_buffer">From the docs</a>:
+</p>
+
+<p>
+<pre># simpleaudio.play_buffer(audio_data, num_channels, bytes_per_sample, sample_rate)
+play_obj = sa.play_buffer(audio_array, num_channels, 2, samplerate)
+play_obj.wait_done()</pre>
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

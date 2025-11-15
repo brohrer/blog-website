@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Setting up an ssh server";</script>
+  <script type="text/javascript">var publication_date = "November 8, 2024";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script type="text/javascript" src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript" src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+<p>These are my notes from setting up ssh for home laptop-to-laptop use.<br>My ssh server machine (the one I want to ssh into)<br>is running Ubuntu 22.04 and my ssh client (the one I want to ssh from)<br>is running macOS Sonoma 14.6. &quot;You&quot; in these notes is future me, after I&#39;ve<br>forgotten everything I learned here. But I hope you find useful things here too.</p>
+<p>Ultimately I want to be able to set up some<br>home servers for wireless devices and robotics experiments, but that&#39;s still<br>a ways off</p>
+<h2>Is ssh on my machine? How about sshd?</h2>
+<p>Test whether you have the capability to open a secure shell with<br>an ssh-capable machine.</p>
+<pre><code class="language-bash">file /etc/ssh/ssh_config
+</code></pre>
+<p>If ssh is installed you&#39;ll get <code>/etc/ssh/ssh_config: ASCII text</code></p>
+<p>If you get <code>No such file or directory</code> you&#39;ll need to install it.</p>
+<p>The process is similar for checking whether you have the capability to<br>be an ssh server (a.k.a. host an ssh connection, run ssh daemon).</p>
+<pre><code class="language-bash">file /etc/ssh/sshd_config
+</code></pre>
+<h2>Install ssh and sshd on Ubuntu</h2>
+<p>To add Openssh client (ssh) and server (sshd) to an Ubuntu system</p>
+<pre><code class="language-bash">sudo apt install openssh-client
+</code></pre>
+<pre><code class="language-bash">sudo apt install openssh-server
+</code></pre>
+<h2>Start up sshd on the ssh server Linux machine</h2>
+<pre><code class="language-bash">sudo systemctl enable --now sshd
+</code></pre>
+<h2>Configure ssh</h2>
+<p>All the configuration is done by modifying <code>/etc/ssh/sshd_config</code>.</p>
+<p>Before you start making changes, it&#39;s helpful to make a copy of the original file.<br>That way when you make a misstep, you always have a reset button available.</p>
+<pre><code class="language-bash">sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+</code></pre>
+<p>After you make changes, first run </p>
+<pre><code class="language-bash">sudo sshd -T -f /etc/ssh/sshd_config
+</code></pre>
+<p>to run an extended test (<code>-T</code>) on the config file (<code>-f</code>).</p>
+<h2>(Re)start sshd</h2>
+<p>Every time you make a change to config, a restart is necessary before it takes effect.</p>
+<pre><code class="language-bash">sudo systemctl restart sshd
+</code></pre>
+<h1>Security measures</h1>
+<p>There are a few things you can do to make your setup more secure against<br>anyone who might want to come and mess around where they&#39;re not wanted.</p>
+<ol>
+<li><p>Use an ssh key instead of the server account password.</p>
+</li>
+<li><p>Use a passphrase with you ssh key.</p>
+</li>
+<li><p>Use a port other than 22.</p>
+</li>
+<li><p>Use an allow list.</p>
+</li>
+<li><p>Don&#39;t allow root login.</p>
+</li>
+<li><p>Enable verbose logging. So you can check on anything hinky.</p>
+</li>
+<li><p>Periodically update sshd.</p>
+</li>
+</ol>
+<h3>1. Use ssh keys</h3>
+<p>and</p>
+<h3>2. Use a passphrase</h3>
+<p>If you don&#39;t already have a key on the client machine</p>
+<pre><code class="language-bash">ssh-keygen -t rsa -b 4096
+</code></pre>
+<p>This creates a 4096-bit<br><a href="https://en.wikipedia.org/wiki/RSA_%28cryptosystem%29">RSA</a>-encrypted<br>public/private key pair.</p>
+<p>During the process you will be prompted for a <strong>passphrase</strong>. Choose one.</p>
+<p>By default, the public key is saved in the file <code>~/.ssh/id_rsa.pub</code>,<br>while <code>~/.ssh/id_rsa</code> is the private key. It&#39;s OK to choose a different name.<br>It&#39;s OK to have as many RSA keys as you want.<br>Now copy the public key file (like <code>id_rsa.pub</code>) to the remote host and append it<br>to <code>~/.ssh/authorized_keys</code> by running</p>
+<pre><code class="language-bash">ssh-copy-id -i &lt;$PUBLIC_KEY_PATH&gt; &lt;$USERNAME_ON_HOST&gt;@&lt;$HOST_IP&gt;
+</code></pre>
+<p>for example</p>
+<pre><code class="language-bash">ssh-copy-id -i ~/.ssh/id_rsa.pub brohrer@192.168.1.10
+</code></pre>
+<p>To enforce the use of ssh keys all the time.</p>
+<p>In <code>/etc/ssh/ssh_config</code>:</p>
+<pre><code class="language-bash">PasswordAuthentication no
+</code></pre>
+<h3>3. Choose a non-typical port</h3>
+<p>By default and historical convention, ssh operates on port 22.<br>If you want to make your ssh setup slightly harder to find, you can operate<br>on a different port, say 43689 or any<br><a href="https://www.convertsimple.com/random-port-generator/">randomly generated port</a>.</p>
+<p>In <code>/etc/ssh/ssh_config</code> uncomment the line that reads</p>
+<pre><code>#Port 22
+</code></pre>
+<p>Modify it thus</p>
+<pre><code>Port 43689
+</code></pre>
+<h3>4. Use an allow list</h3>
+<p>Explicitly list the IP addresses that may be connecting. Uncomment and modify<br>the <code>ListenAddress</code> lines to read something like:</p>
+<p>In <code>/etc/ssh/ssh_config</code>:</p>
+<pre><code class="language-bash">ListenAddress 0.0.0.0
+ListenAddress 192.168.1.10
+ListenAddress 192.168.1.11
+</code></pre>
+<p>depending on the IP addresses in your network. Note that if your devices<br>have dynamically-allocated addresses (DHCP), you&#39;ll need to go into their wireless<br>settings and change them to have a consistent IP address.</p>
+<h3>5. Disallow root login</h3>
+<p>This is to protect you from ssh&#39;ing in as root@192.... and wreaking all kinds of<br>havoc on your own ssh server. You can still sudo and do what needs doing.<br>It&#39;s just good hygeine.</p>
+<pre><code class="language-bash">PermitRootLogin no
+</code></pre>
+<h3>6. Enable a verbose logging level</h3>
+<pre><code class="language-bash">LogLevel INFO
+</code></pre>
+<p>To inspect the logs at any time</p>
+<pre><code class="language-bash"> cat /var/log/auth.log
+</code></pre>
+<h3>7. Keep it updated</h3>
+<pre><code class="language-bash">sudo apt update
+sudo apt install openssh-server
+</code></pre>
+<h2>Resources</h2>
+<p>A beginner’s guide to SSH for remote connection on Linux <br>By sudo apt update  Seth Kenlon <br>September 7, 2020 <br><a href="https://opensource.com/article/20/9/ssh">https://opensource.com/article/20/9/ssh</a></p>
+<p>SSH Copy ID for Copying SSH Keys to Servers <br>By ssh Academy<br><a href="https://www.ssh.com/academy/ssh/copy-id">https://www.ssh.com/academy/ssh/copy-id</a></p>
+<p>How To Harden OpenSSH on Ubuntu 20.04 <br>by Jamon Camisso <br>November 8, 2021 <br><a href="https://www.digitalocean.com/community/tutorials/how-to-harden-openssh-on-ubuntu-20-04">https://www.digitalocean.com/community/tutorials/how-to-harden-openssh-on-ubuntu-20-04</a></p>
+<p>The Complete Guide to the <code>sshd_config</code> File in Linux <br>by Linux Code <br>February 25, 2024 <br><a href="https://linuxhaxor.net/code/sshd-config-file-complete-guide-for-linux.html">https://linuxhaxor.net/code/sshd-config-file-complete-guide-for-linux.html</a></p>
+<p>sshd man page <br>updated September 19, 2023 <br><a href="https://www.man7.org/linux/man-pages/man8/sshd.8.html">https://www.man7.org/linux/man-pages/man8/sshd.8.html</a></p>
+
+
+        <script type="text/javascript" src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script type="text/javascript" src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

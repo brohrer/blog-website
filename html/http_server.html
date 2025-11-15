@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Writing an HTTP server in Python";</script>
+  <script type="text/javascript">var publication_date = "December 26, 2024";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script type="text/javascript" src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript" src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+<p>This is the sequel to a post walking through an <a href="https://www.brandonrohrer.com/http_client.html">HTTP client in Python</a>. The client in that post sent a request to a server that performs addition. This post walks through the code for that server</p>
+<p><a href="https://www.brandonrohrer.com/server_naming.html">Server terminology</a> can be confusing. &quot;Server&quot; can refer to both the program that listens for HTTP messages and the metal and ceramic box sitting in a rack in a data center where that program runs. In this post, we are focusing on the first of those.</p>
+<h2>Some Python</h2>
+<p>Here&#39;s the code for the server. We&#39;ll spend the rest of the post stepping through it.</p>
+<pre><code>from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+
+host = &quot;192.168.1.42&quot;
+port = 8000
+
+
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        content_length = int(self.headers[&#39;Content-Length&#39;])
+        request_body = json.loads(
+            self.rfile.read(content_length).decode(&#39;utf-8&#39;)
+        )
+
+        answer = request_body[&quot;val_a&quot;] + request_body[&quot;val_b&quot;]
+        response_body = json.dumps({&quot;sum&quot;: answer}).encode(&quot;utf-8&quot;)
+
+        self.send_response(200)
+        self.send_header(&quot;Content-type&quot;, &quot;application/json&quot;)
+        self.send_header(&quot;Content-Length&quot;, len(response_body))
+        self.end_headers()
+        self.wfile.write(response_body)
+
+
+if __name__ == &quot;__main__&quot;:
+    httpd = HTTPServer((host, port), RequestHandler)
+    httpd.serve_forever()
+</code></pre>
+<h2>The foundation classes</h2>
+<p>The two classes <code>BaseHTTPRequestHandler</code> and <code>HTTPServer</code> do a lot of heavy lifting here. They hide a lot of things that we would rather not have to think about and don&#39;t need to know about to make good server.</p>
+<pre><code>from http.server import BaseHTTPRequestHandler, HTTPServer
+</code></pre>
+<p><code>HTTPServer</code> is the class that create the server.</p>
+<pre><code>httpd = HTTPServer((host, port), RequestHandler)
+httpd.serve_forever()
+</code></pre>
+<p>It takes two arguments, a tuple containing the IP address of the computer server is running on and the port it plans to use, and a Request Handler class (more on that below).</p>
+<p><code>serve_forver()</code> is the method that kicks off the server daemon. It will keep running forever until something kills it. It&#39;s not exactly right (but also not totally wrong) to imagine that a server is a fast <code>while</code> loop that checks for a new request on every iteration.</p>
+<h2>Request handling</h2>
+<p>Each time a new request comes in, the server&#39;s goal is to get it processed. To help do this, there is a separate class, the RequestHandler. The <code>http.server</code> library does a lot of behind-the-scenes work for us here with a <code>BaseHTTPRequestHandler</code> class.</p>
+<pre><code>class RequestHandler(BaseHTTPRequestHandler):
+</code></pre>
+<p>To build out a full fledged request handler, we only need to extend the base class with methods to handle each server action. For instance, the <code>GET</code> action needs to have a corresponding <code>do_GET()</code> method in the <code>RequestHandler</code> class.</p>
+<pre><code>def do_GET(self):
+    ...
+</code></pre>
+<p>If the server accepts a <code>POST</code> then the request handler needs a <code>do_POST()</code>. If we expect it to handle <code>DELETE</code> then it needs a <code>do_DELETE()</code>. You get the idea.</p>
+<h2>Server actions</h2>
+<p>HTTP actions are defined by tradition and convention, but there are no hard constraints on what they do. If you are writing a server, you can make <code>GET</code> and <code>POST</code> do whatever you want. There&#39;s nothing in the <code>http.server</code> library that enforces any particular behavior for these actions. As long as the client knows what to expect, it&#39;s fine.</p>
+<p>If you choose to be an agent of chaos, you can even define your own actions. Imagine writing a server with <code>GETONE</code>, <code>GETTWO</code>, and <code>GETMANY</code> actions. (This is fine if you are also the one writing the clients. It may be awkward if you&#39;re making a public API.) Or if you&#39;d like to bury an easter egg, plant a RICKROLL action. And if you lean chaotic evil, remember that actions are case-sensitive. You <em>could</em> write <code>POST</code>, <code>post</code>, and <code>pOsT</code> methods. But you shouldn&#39;t. You will go to computer jail.</p>
+<h2>Interpreting requests</h2>
+<p>Any action handler method will have to interpret the request message and compose a response message.</p>
+<p>Request messages have three parts</p>
+<ol>
+<li>a request to do something</li>
+<li>some headers</li>
+<li>a body (optional)</li>
+</ol>
+<p>Thanks to the <code>BaseHTTPRequestHandler</code> class, headers can be conveniently accessed through the <code>self.headers</code> attribute</p>
+<pre><code>content_length = int(self.headers[&#39;Content-Length&#39;])
+</code></pre>
+<p>and the body can be accessed through the file-like <code>self.rfile</code></p>
+<pre><code>request_body = json.loads(
+    self.rfile.read(content_length).decode(&#39;utf-8&#39;)
+)
+</code></pre>
+<p>Other than those differences, the operations for reading and transforming the headers and body are the same as <a href="https://www.brandonrohrer.com/http_client.html">what the client does</a> when interpreting response messages.</p>
+<p>The path argument is also available via the attribute <code>self.path</code> It doesn&#39;t get used in the addition server, so the code never bothers to call it, but it&#39;s there.</p>
+<p>After the request body is fully ingested, any information or arguments it contains can be taken and used to do whatever it is the server intends to do. This particular server looks for a JSON payload, which gets translated into a Python dict. The two keys it expects to find are <code>val_a</code> and <code>val_b</code>, which it adds together.</p>
+<pre><code>answer = request_body[&quot;val_a&quot;] + request_body[&quot;val_b&quot;]
+</code></pre>
+<h2>Composing a response</h2>
+<p>Response messages also have three parts</p>
+<ol>
+<li>a status report</li>
+<li>some headers</li>
+<li>a body (optional)</li>
+</ol>
+<p>Sending an appropriate status is the first order of business.</p>
+<pre><code>self.send_response(200)
+</code></pre>
+<p>This server is poorly engineered in that it doesn&#39;t check for any failure modes and doesn&#39;t offer to send back any other status values. If this were destined for production someplace important, there may be a check for whether the values passed were numerical, and a 422 status (Unprocessable Content) returned if they were not.</p>
+<p>Formulating the headers is done a little differently than in <code>http.client</code> thanks to some additional syntactic sugar in the <code>http.server</code> library.</p>
+<pre><code>self.send_header(&quot;Content-type&quot;, &quot;application/json&quot;)
+self.send_header(&quot;Content-Length&quot;, len(response_body))
+self.end_headers()
+</code></pre>
+<p>Also, writing the body in the server is done by writing to a file-like object called <code>self.wfile</code>.</p>
+<pre><code>response_body = json.dumps({&quot;sum&quot;: answer}).encode(&quot;utf-8&quot;)
+self.wfile.write(response_body)
+</code></pre>
+<p>It&#39;s not exactly writing to a file, but you don&#39;t have to think about that fact, thanks to how it&#39;s implemented. Under the hood, it&#39;s a <a href="https://docs.python.org/3/library/io.html#io.BufferedIOBase"><code>BufferedIOBase</code></a> from Python&#39;s <code>io</code> library. <code>BufferedIOBase</code> is a stream, allowing the data to start being sent in small chunks before the server is even done writing it.</p>
+<p>And that&#39;s it. A whole bare-bones HTTP server. There are a thousand ways to make it more sophisticated and fault tolerant and faster and scalable and efficient, but this is the foundation.</p>
+<h2>Other ways to use the path</h2>
+<p>One common trick is to use the path argument to sneak in extra information.</p>
+<p>If the server performs a function, rather than pulling from a particular file, then the path argument doesn&#39;t matter much. It will still be included, but it&#39;s fine to discard it.</p>
+<p>The path argument itself is just a string. It&#39;s only by convention that it gets interpreted as a path most of the time. This means we have wiggle room to use it creatively.</p>
+<p>One trick is to stack information in a way that looks like a path. These <em>path parameters</em> are a convenient shortcut. For instance, a path argument of
+<pre><code>/param-a/param-a-val/param-b/param-b-val/</code></pre>
+is a way of sending two parameter values without having to formulate a body and get it encoded properly. Path parameters are most common when specifying which page, file, model, or database to reach.</p>
+<p>Alternatively parameters can be tagged onto the end of the path the same way all those annoying annotations appear on URLs when you copy them from your browser bar 
+<pre><code>/?param-a=param-a-val&amp;param-b=param-b-val</code></pre>
+These <em>query parameters</em> are most common when specifying how to do something. Search filters, model parameters, and formatting instructions, for instance.</p>
+<p>The parameter information contained in each method is the same. Browsers tend to cache the result when you use path arguments, so whenever you are dealing with demanding requests and want to take advantage of the browser holding the result in short term memory, path parameters are the way to go.</p>
+
+<h2>What version of HTTP?</h2>
+<p>As far as I&#39;ve been able to tell, <code>http.client</code> and <code>http.server</code> are all HTTP version 1.1 (or 1.0) all the time. HTTP/2 and HTTP/3 are definitely alive and well, but haven&#39;t made their way into the basic Python toolbox yet. The requests and responses are identical in nearly all cases, but under the hood the later versions do some things to increase transfer speeds and decrease latency.</p>
+<h2>Waiting, timing, blocking, and threads</h2>
+<p>By default, RequestHandler classes are synchronous. That means that the request handler is blocking&mdash;that the (conceptual) loop that the server is running on repeat has to pause until the request handler is done handline the request.</p>
+<p>This is a single-threaded implementation, and it&#39;s perfectly fine as long as</p>
+<ul>
+<li>The time it takes to process a request isn&#39;t too long</li>
+<li>or</li>
+<li>Request messages have long timeouts</li>
+<li>or</li>
+<li>Dropping requests is not a big deal</li>
+</ul>
+<p>But very often, none of these is the case. In that situation, a helpful trick is to move to asynchronous request handlers. Each time the server listener encounters a new request, it quickly spins out a new thread to handle it and then continues listening for the next request message.</p>
+<p>The code for this relies on the <a href="https://docs.python.org/3/library/http.server.html#http.server.ThreadingHTTPServer">ThreadingHTTPServer</a> class from <code>http.server</code>. A fully-fledged example will have to wait for another post, but the critical snippet looks like this</p>
+<pre><code>from http.server import HTTPServer
+from socketserver import ThreadingMixIn
+
+class ThreadingServer(ThreadingMixIn, HTTPServer):
+    pass
+</code></pre>
+<p>Everything else is exactly the same.</p>
+<br>
+<br>
+<h2>Oh the places you&#39;ll go!</h2>
+<p>Like high school, this is just the barest outline of what you need to know to get going. We haven&#39;t talked at all about security or authentication or scaling or redundancy or load balancing in multi-tier servers. Unless that&#39;s what your employer pays you to do, there&#39;s a good chance you&#39;ll never need to learn about any of that, but if/when you do, you&#39;ll have a solid scaffold to anchor it to.</p>
+<p>In the meantime, you have what you need to prototype a dizzyingly vast set of projects. Writing your own HTTP clients and servers lets you tie your work into popular apps (like Slack and GitHub), broader infrastructure (every large cloud provider has an API), and public datasets (everything from economic data to satellite imagery). The whole reason I decided to dig into this was to support a distributed reinforcement learning and robotics project, and I couldn&#39;t figure out an easier way to get different compute-heavy processes to coordinate with each other.</p>
+<p>So go wild! Find something you&#39;re interested in or curious about and tinker away. More than anything else, I hope you have fun.</p>
+
+
+        <script type="text/javascript" src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script type="text/javascript" src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

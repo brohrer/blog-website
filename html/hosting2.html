@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Attach your web server to a domain name";</script>
+  <script type="text/javascript">var publication_date = "September 07, 2025";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+In <a href="hosting.html">part one</a> of this series we set up a web server.
+The next step is to make it act like a real website.
+</p>
+
+<h2><a id="Buy-a-domain-name"></a><a href="#Buy-a-domain-name">Buy a domain name</a></h2>
+
+<p>
+The first thing to do is to name it. 
+Typing <code>http://192.0.2.146</code> to get to your content is impersonal,
+boring, and impossible to remember. The name of a website is its
+<a href="https://en.wikipedia.org/wiki/Domain_name">domain name</a>.
+For example, the domain name for English-language Wikipedia
+is <code>en.wikipedia.org</code>.
+</p>
+
+<ul>
+<li> <code>org</code> is the top level domain (TLD).</li>
+<li> <code>wikipedia</code> is the second level domain.</li>
+<li> <code>en</code> is a <a href="https://en.wikipedia.org/wiki/Subdomain">subdomain</a>.</li>
+</ul>
+
+<p>
+Top level domains come in two flavors, generic and country code.
+Generic top level domains (gTLDs) include some you are familiar with,
+like <code>.com</code> and <code>.org</code>, and a bunch you've probably never seen,
+like <code>.anime</code> and <code>.tattoos</code>.
+Country code top level domains (ccTLDs) are all two-letter
+country codes taken
+from <a href="https://en.wikipedia.org/wiki/ISO_3166-1">ISO-3166</a>.
+A few of the most common are <code>.uk</code> (United Kingdom),
+<code>.de</code> (Germany), and <code>.cn</code> (China).
+</p>
+
+<p>
+Sometimes people will get creative with country codes and
+<a href="https://en.m.wikipedia.org/wiki/Domain_hack">repurpose them</a>.
+The <code>.ai</code> (Antigua) ccTLD has been co-opted by a whole generation of
+startups. Same for <code>.io</code> (British Indian Ocean Territory).
+<code>.me</code> (Montenegro) is a fun one for personalized websites, and the US
+state of Maine. <code>.it</code> (Italy) and <code>.to</code> (Tonga) are useful for spelling
+English phrases and words like <code>this.is.it</code> and <code>p.ota.to</code>.
+</p>
+
+<p>
+<figure>
+  <img title="A few of the most popular TLDs on Namecheap.  As a rule of thumb, the more popular and commerce-oriented the TLD, the more expensive it will be." alt="Popular TLDs on Namecheap
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/popular_tlds.png">
+  <figcaption>A few of the most popular TLDs on Namecheap.  As a rule of thumb, the more popular and commerce-oriented the TLD, the more expensive it will be.</figcaption>
+</figure>
+</p>
+
+<p>
+The <a href="https://data.iana.org/TLD/tlds-alpha-by-domain.txt">comprehesive list of TLDs
+</a> has 1439 of them,
+as of August 2025 so it's easy to get overwhelmed. If you get paralyzed
+by choice, you're always safe going with dot com.
+</p>
+
+<p>
+There’s a running joke that the most important part of any project
+is choosing the right domain name. There’s another joke that 90% of
+projects don’t get past choosing a domain name. It’s fun but not
+critical. Put as much or as little thought into it as you want.
+It's OK to make this all about you. And anyway, if insipration strikes
+next month you can always buy another domain.
+</p>
+
+<p>
+There are quite a few reputable domain registrars--places that can sell you a
+domain name--and it's tough to go wrong. I get mine through
+<a href="https://www.namecheap.com/">Namecheap</a>, but other popular ones are
+<a href="https://www.hostinger.com">Hostinger</a>,
+<a href="https://www.godaddy.com/">GoDaddy</a>, and
+<a href="https://porkbun.com/">porkbun</a>.
+I found <a href="https://www.techradar.com/news/best-domain-registrars">this TechRadar review
+</a>
+very helpful. You can go to one of these fine establishments and just
+buy your domain name of choice, as long as someone else hasn't beat
+you to it. It's so cool that with a few clicks and a few bucks you
+can claim a a globally unique piece of real estate and start to build
+your digital castle there. Trippy.
+</p>
+
+<h2><a id="Point-the-domain-to-your-web-server"></a><a href="#Point-the-domain-to-your-web-server">Point the domain to your web server</a></h2>
+
+<p>
+The next step is to inform the domain name servers (DNS) of the world
+that your new domain name should point to your web server.
+</p>
+
+<p>
+This most likely is something you can do through the company that sold you
+your domain name. The Namecheap interface looks like this, and other domain
+name brokers have a similar page.
+</p>
+
+<p>
+<img alt="Adding Namecheap DNS records
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/dns_records.png">
+</p>
+
+<p>
+The important pieces of information here are
+</p>
+
+<ul>
+<li> <strong>Type</strong> This will be an "A record" (short for <strong>A</strong>dress). There are
+a few other useful types but nothing that we need to worry about to get
+started. A records establish the IPv4 address assoicated with the domain name.</li>
+<li> <strong>Host</strong> This is the domain name being assigned. As a short hand,
+<code>@</code> means "whatever domain name you just bought and are now setting up",
+maybe something like <code>brandonrohrer.com</code>. <code>www</code> is also shorthand for 
+<code>www.brandonrohrer.com</code>, just like <code>en</code> in this column would be
+shorthand for <code>en.wikipedia.org</code> if we were setting up the Wikipedia page.</li>
+<li> <strong>Value</strong> The IP address that the Host should be directed to. For us this
+will be the IP address of the web server we just created.</li>
+<li> <strong>TTL</strong> Time to live for this DNS record on the domain name servers before
+they forget about it and have to ask again. "Automatic" is fine unti
+you start doing fancy things with DNS.</li>
+</ul>
+
+<p>
+The entries in this image will send any Internet user in the world who
+puts <code>brandonrohrer.com</code> or <code>www.brandonrohrer.com</code> in their browser to 
+<code>192.0.2.146</code>.
+</p>
+
+<p>
+DNS is a big topic, and the details can bite you occassionally. If you
+have a few minutes and a little curiosity, I recommend checking out
+<a href="https://wizardzines.com/zines/dns/">How DNS works</a> by Julia Evans.
+It is both ridiculously accessible and deeply informative.
+Best $12 you will spend this week.
+</p>
+
+<p>
+<img alt="The cover of Julia Evans' How DNS works
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/how_dns_works.png">
+</p>
+
+<p>
+<img alt="Table of contents of How DNS works
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/how_dns_contents.png">
+</p>
+
+<h2><a id="Wait"></a><a href="#Wait">Wait</a></h2>
+
+<p>
+If your domain is brand new, then the DNS records you added may be available
+quickly, but more often it can take up to 48 hours. DNSs hang on to
+address records that they've read recently (DNS caching) and only ask
+for updates after the TTL has expired. Unfortunately this can be
+a couple of days.
+</p>
+
+<p>
+You can check in on the process while waiting. There are several
+command line invocations on Linux and MacOS that resolve a domain name.
+After reassigning <code>e2eml.school</code> to <code>192.0.2.146</code> here were some
+of the ways it showed up.
+</p>
+
+<h3><a id="<code>ping</code>"></a><a href="#<code>ping</code>"><code>ping</code></a></h3>
+
+<p>
+<pre>
+ping e2eml.school
+</pre>
+</p>
+
+<p>
+gave me
+</p>
+
+<p>
+<pre>
+PING e2eml.school (192.0.2.146): 56 data bytes
+64 bytes from 192.0.2.146: icmp_seq=0 ttl=46 time=19.565 ms
+64 bytes from 192.0.2.146: icmp_seq=1 ttl=46 time=19.744 ms
+64 bytes from 192.0.2.146: icmp_seq=2 ttl=46 time=22.920 ms
+64 bytes from 192.0.2.146: icmp_seq=3 ttl=46 time=23.076 ms
+...
+</pre>
+</p>
+
+<p>
+<code>ping</code> checks how long it takes to send a packet to the destination and
+get a response. In the process it also reports the IP address that
+the domain resolved to.
+</p>
+
+<h3><a id="<code>host</code>"></a><a href="#<code>host</code>"><code>host</code></a></h3>
+
+<p>
+<pre>
+host e2eml.school
+</pre>
+</p>
+
+<p>
+gave me
+</p>
+
+<p>
+<pre>
+e2eml.school has address 192.0.2.146
+...
+</pre>
+</p>
+
+<p>
+<code>host</code> directly resolves the IP address associated with the domain name.
+It doesn't necessarily do this in the same way as <code>ping</code>. It can ask
+different computers and programs. So it may give a different answer,
+as the DNS record changes roll out to the rest of the DNSs.
+</p>
+
+<h3><a id="<code>nslookup</code>"></a><a href="#<code>nslookup</code>"><code>nslookup</code></a></h3>
+
+<p>
+<pre>
+nslookup e2eml.school
+</pre>
+</p>
+
+<p>
+gave me
+</p>
+
+<p>
+<pre>
+Server:		2001:558:feed::1
+Address:	2001:558:feed::1#53 <br>
+Non-authoritative answer:
+Name:	e2eml.school
+Address: 192.0.2.146
+</pre>
+</p>
+
+<p>
+The IP address appears here too. This method is also complementary to
+<code>ping</code> and <code>host</code>. It can give a different answer.
+</p>
+
+<h3><a id="<code>dig</code>"></a><a href="#<code>dig</code>"><code>dig</code></a></h3>
+
+<p>
+<pre>
+dig +noall +answer e2eml.school
+</pre>
+</p>
+
+<p>
+gave me
+</p>
+
+<p>
+<pre>
+e2eml.school.		1799	IN	A	192.0.2.146
+</pre>
+</p>
+
+<p>
+In yet another way it returns the IP address for the domain.
+</p>
+
+<p>
+A convenient way to run bulk checks from a collection of places
+around the world is from a
+<a href="https://dnschecker.org">DNS checker website</a>.
+</p>
+
+<p>
+<img alt="A DNS checker running e2eml.school from all over the world
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/dns_checker.png">
+</p>
+
+<p>
+When all of these agree, that's a pretty good sign that the DNS record change
+is complete.
+But the ultimate test is to run and end to end verification.
+Make some change to a <code>.html</code> file on the server and see whether it
+shows up when you try to read that file in your browser. 
+</p>
+
+<h2><a id="Add-your-websites-from-a-repository"></a><a href="#Add-your-websites-from-a-repository">Add your websites from a repository</a></h2>
+
+<p>
+You can be done now if you want. You have the <code>http://</code> version
+of your domain pointing to your IP address, and a place where you
+can add all the html files you like. This next step, while optional,
+can make it easier to develop web pages and track your changes.
+</p>
+
+<p>
+Rather than have your web server be your source of truth for your web pages,
+you can have your main copy live in a git repository. Then you just pull
+this repository to your web server when you want to roll out edits or
+new pages.
+</p>
+
+<p>
+For convenience, name your git repository the same name as your domain
+and put all the files in an <code>html</code> subdirectory.
+</p>
+
+<p>
+<pre>
+my.website.com
+┗ html
+  ┣ index.html
+  ┣ ...
+</pre>
+</p>
+
+<p>
+If you're new to git and want to open the black box, <a href="https://jvns.ca/blog/2024/04/25/new-zine--how-git-works-/">Julia Evans'
+Wizard Zines</a>
+is an amazing explainer.
+There are
+<a href="https://www.brandonrohrer.com/git_resources">some other helpful resources</a>
+here, especially <a href="https://ohshitgit.com">Oh shit, git!</a> (
+also available <a href="https://wizardzines.com/zines/oh-shit-git/">as a zine</a>
+), the
+repair kit in case things go off the rails.
+</p>
+
+<p>
+If your repo is on GitHub, then you can put in to your server where
+it needs to be with this:
+</p>
+
+<p>
+<pre>
+cd /var/www/
+sudo git clone https://github.com/your-github-username/your-domain.git
+</pre>
+</p>
+
+<p>
+Modify as necessary if you are using another git service.
+</p>
+
+<p>
+Using the <code>http</code> version works great because the web server will be pull-only
+and shouldn't need to mess around with keys or authorization because it's
+not going to be making any changes.
+And any time you make change to any of your files in the repository, you can
+re-deploy it with 
+</p>
+
+<p>
+<pre>
+sudo git pull origin HEAD
+</pre>
+</p>
+
+<h2><a id="Set-up-a-server-block"></a><a href="#Set-up-a-server-block">Set up a server block</a></h2>
+
+<p>
+To finish setting up nginx to use your web code from git, follow these
+excellent instructions in
+<a href="https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-20-04#step-5-setting-up-server-blocks-recommended">the Digital Ocean docs</a>
+that do a better job than I can of walking you through this. There are a lot of
+steps, but they are all copy/paste-able into your ssh console.
+</p>
+
+<p>
+Putting all the files for your domain in its own directory like this referred
+to as a server block. While you can just dump them all in the top level
+<code>/var/www/html/</code> directory, this gives a little more structure to them.
+And the really cool part is that you can repeat this for other
+domain names if you want. No need to spin up another server instance
+for each one.
+</p>
+
+<p>
+At this point, you have a fully deployed website at <code>http://your-domain</code>.
+The next post is going to change that into a <code>https://</code> and do some
+other things to harden the security of your website and server.
+It's a brutal world out there, and it pays to protect yourself.
+</p>
+
+<h2><a id="Deploy-changes"></a><a href="#Deploy-changes">Deploy changes</a></h2>
+
+<p>
+When you make edits or add pages the steps to deploy them are, first,
+make sure the changes are reflected in the git repository. Then,
+ssh into the server and run
+</p>
+
+<p>
+<pre>
+cd /var/www/your-domain
+sudo git pull origin HEAD
+</pre>
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

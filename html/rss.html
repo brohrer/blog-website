@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "How to start publishing an RSS feed";</script>
+  <script type="text/javascript">var publication_date = "August 17, 2025";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+Before Twitter, before LinkedIn, before Facebook, there was
+<a href="https://en.wikipedia.org/wiki/RSS">RSS</a>.
+Really Simple Syndication is the photocopied 'zine of microblogging.
+If there were social media in Mad Max, it would have been RSS. It's
+totally outside any centralized control, cheap, gritty, and punk af. 
+</p>
+
+<h2><a id="Reading-RSS"></a><a href="#Reading-RSS">Reading RSS</a></h2>
+
+<p>
+The toughest thing to get used to is that there is no central platform.
+RSS is just a bunch of people creating RSS-formatted files and posting them
+on the internet. The burden of assembling them into a reading list falls
+on the reader. Thankfully there <strong>aggregators</strong>, helpful programs that regularly
+check those RSS files for changes and lay them out for you in a feed.
+</p>
+
+<p>
+I use <a href="https://feedly.com">Feedly</a> daily, and enjoy
+<a href="https://www.inoreader.com">Inoreader</a> too. I've also heard that 
+<a href="https://feeder.co">Feeder</a> and 
+<a href="https://newsblur.com">NewsBlur</a> are solid options. There are plenty
+of others, some with niche functionality. The cool part is that there isn't
+a "main" one or a home base. They're all their own thing. All they do
+is gather up changes and put them in a list for you.
+</p>
+
+<p>
+To subscribe to someone's feed, you'll need to get the URL. These are
+frequently posted on their blog under an "RSS feed" link or the
+RSS logo.
+</p>
+
+<p>
+<img alt="The RSS logo, a dot at the center of two quarter-circles, 
+giving the appearance of waves radiating out from a central point
+" src="https://upload.wikimedia.org/wikipedia/en/4/43/Feed-icon.svg">
+</p>
+
+<p>
+The URL is to an .xml file. For my blog it looks like
+</p>
+
+<p>
+<pre>
+https://brandonrohrer.com/feed.xml
+</pre>
+</p>
+
+<p>
+For an example feed created for this post, it looks like
+</p>
+
+<p>
+<pre>
+https://raw.githubusercontent.com/brohrer/blog/refs/heads/main/code/example_feed.xml
+</pre>
+</p>
+
+<p>
+This is the key to subscribing. Copy the URL and paste it into the
+field for 
+"Add channel" or "Follow feeds" or whatever other name your aggregator uses.
+And from then on your aggregator will revisit that URL occasionally,
+checking for new content, and add it to your feed.
+</p>
+
+<p>
+<figure>
+  <img title="A Follow Sources dialog from Feedly" alt="A Follow Sources dialog page, with a field for pasting a feed URL
+and below that a list of feeds that match the URL
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/rss/follow_sources.png">
+  <figcaption>A Follow Sources dialog from Feedly</figcaption>
+</figure>
+</p>
+
+<p>
+<figure>
+  <img title="A channel overview on Feedly" alt="An overview of the feed, showing channel title and a thumbnail
+view of the first post
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/rss/feed_overview.png">
+  <figcaption>A channel overview on Feedly</figcaption>
+</figure>
+</p>
+
+<p>
+<figure>
+  <img title="An example post, viewed on Feedly" alt="An example post with the title Post Content and some text reading 
+This can be any html.
+followed by a vintage drawing of Christopher Robin reading to 
+Winnie the Pooh, who is stuck in a hole.
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/rss/example_post.png">
+  <figcaption>An example post, viewed on Feedly</figcaption>
+</figure>
+</p>
+
+<p>
+Most aggregators also have a way to explore the more popular feeds.
+</p>
+
+<p>
+<figure>
+  <img title="Some popular feed topics, offered on Feedly" alt="A list of 15 industries and a handful skills as topics to search for feeds
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/rss/feed_topics.png">
+  <figcaption>Some popular feed topics, offered on Feedly</figcaption>
+</figure>
+</p>
+
+<h2><a id="Writing-RSS"></a><a href="#Writing-RSS">Writing RSS</a></h2>
+
+<p>
+If the process of following RSS feeds seems duct-tape-and-bailing-wire,
+you'll love writing them.
+</p>
+
+<h3><a id="1.-Find-a-place-to-host-it"></a><a href="#1.-Find-a-place-to-host-it">1. Find a place to host it</a></h3>
+
+<p>
+Aggregators need to be able to find your feed .xml file on the internet.
+Any place you can upload a text file and share it with the world should do.
+One free option is <a href="https://www.github.com">GitHub</a> if that's a tool
+you're familiar with. Here's 
+<a href="https://github.com/brohrer/blog/blob/main/code/example_feed.xml">the .xml file for the example feed
+</a>
+which is on GitHub.
+</p>
+
+<p>
+<pre>
+&lt;rss version="2.0"&gt;
+  &lt;channel&gt;
+    &lt;title&gt;Your Feed&lt;/title&gt;
+    &lt;link&gt;https://www.brandonrohrer.com&lt;/link&gt;
+    &lt;description&gt;Your Blog's name&lt;/description&gt; <br>
+    &lt;item&gt;
+      &lt;title&gt;Blog title&lt;/title&gt;
+      &lt;link&gt;https://www.brandonrohrer.com/rss.html&lt;/link&gt;
+      &lt;pubDate&gt;Sat, 16 Aug 2025 12:31:00 EDT&lt;/pubDate&gt;
+      &lt;guid isPermaLink="false"&gt;https://www.brandonrohrer.com/rss.html.04&lt;/guid&gt;
+      &lt;description&gt;&lt;![CDATA[
+        &lt;h1&gt;Post content&lt;/h1&gt;
+        &lt;p&gt;
+          This can be any html.
+        &lt;/p&gt;
+        &lt;img src="https://upload.wikimedia.org/wikipedia/commons/9/97/Winnie-the-Pooh_45-1.png"&gt;
+      ]]&gt;&lt;/description&gt;
+    &lt;/item&gt; <br>
+  &lt;/channel&gt;
+&lt;/rss&gt;
+</pre>
+</p>
+
+<p>
+You can copy this directly into your own feed .xml and modify it. 
+A trick to remember with GitHub is that the link to your feed will actually
+be the "raw" link, which is available from the icon on the right side
+of the screen when looking at the file in GitHub.
+</p>
+
+<p>
+There are two major sections, the <code>channel</code> information at the top,
+then information for each <code>item</code> below that.
+</p>
+
+<h3><a id="2.-Add-channel-information"></a><a href="#2.-Add-channel-information">2. Add channel information</a></h3>
+
+<ul>
+<li> <code>title</code> is the channel name. It can be anything you want. It’s what
+people will see when they pull up your channel in their aggregator.</li>
+<li> <code>link</code> is a website associated with your channel. For me, it's the
+landing page of my blog.</li>
+<li> <code>description</code> is typically a one-line explanation of what readers can
+expect to see in your feed.</li>
+</ul>
+
+<p>
+There are <a href="https://www.rssboard.org/rss-specification#optionalChannelElements">lots of other elements
+</a>
+you can add here if you like, but these are the required ones.
+</p>
+
+<h3><a id="3.-Add-item-information"></a><a href="#3.-Add-item-information">3. Add item information</a></h3>
+
+<p>
+Once you have the channel info in place you can add an item.
+An item needs a few basic pieces of information.
+</p>
+
+<ul>
+<li> <code>title</code> is the name of the particular post. </li>
+<li> <code>link</code> is a URL associated with it.</li>
+<li> <code>pubDate</code> is <a href="https://whitep4nth3r.com/blog/how-to-format-dates-for-rss-feeds-rfc-822/#valid-rfc-822-date-format">a date in the format of
+</a>
+<code>Fri, 16 Aug 2025 19:31:00 EDT</code>. It shows up at the top of a post as
+the publication date.</li>
+<li> <code>guid</code> (globally unique identifier) is a string that aggregators can use
+as an ID for this post. I find it useful for when I update the content
+of the post and I want aggregators to re-load it on their next pass.
+Changing the guid signals to the aggregator that the post needs to be
+re-loaded. By default, RSS assumes that this is a permanent link to the
+website being promoted by this post item. If you include the argument
+<code>isPermaLink="false"</code> that signals that this isn't intended to be a URL, just
+an identifying string.</li>
+<li> <code>description</code> is the body of the post. It can be a one-line teaser
+for the linked content or it can be an entire novel. Everything
+between the <code>&lt;![CDATA[</code> and <code>]]&gt;</code> delimiters will be interpreted as straight
+html, which is super useful if you want to do pretty formatting or
+include images. Not all aggregators will interpret all html tags
+(for instance <code>&lt;script&gt;</code>
+<a href="https://validator.w3.org/feed/docs/warning/SecurityRisk.html">is likely to get skipped</a>
+for security reasons),
+but any html that gives the aggregator pause will usually just be skipped over.</li>
+</ul>
+
+<p>
+There are a number of
+<a href="https://www.rssboard.org/rss-specification#hrelementsOfLtitemgt">other item elements</a>
+you an add if you wish, but this is the subset I've found most useful.
+</p>
+
+<p>
+You can add as many items as you like. Just repeat the <code>&lt;item&gt;</code> section.
+</p>
+
+<p>
+<pre>...
+    &lt;item&gt;
+      &lt;title&gt;First post&lt;/title&gt;
+      ...
+    &lt;/item&gt;
+    ...
+    &lt;item&gt;
+      &lt;title&gt;Second post&lt;/title&gt;
+      ...
+    &lt;/item&gt;
+   ...
+    &lt;item&gt;
+      &lt;title&gt;Third post&lt;/title&gt;
+      ...
+    &lt;/item&gt;
+    ...
+</pre>
+</p>
+
+<p>
+And that's it. You've created an RSS feed. Every time you edit your .xml
+file, you've updated your feed.
+</p>
+
+<p>
+Debugging feed .xml files can be fiddly. There are a lot of details that
+have to be just so, and it can take a loooong time to
+wait for the aggregrator to re-scan so that you can check the results.
+A cool thing I discovered while writing this is that there are RSS
+validation services like 
+<a href="https://validator.w3.org/feed/">this one</a> and
+<a href="https://www.rssboard.org/rss-validator/check.cgi">this one</a>
+where you can
+enter the contents of your feed file or the URL for your feed,
+and it will check your feed for errors
+right away. It revealed several imperfections in my own feed that I 
+was oblivious to.
+</p>
+
+<h2><a id="RSS-is-different-than-other-social-media"></a><a href="#RSS-is-different-than-other-social-media">RSS is different than other social media</a></h2>
+
+<h3><a id="Things-that-you-give-up"></a><a href="#Things-that-you-give-up">Things that you give up</a></h3>
+
+<p>
+When you send an RSS post out into the Internet, you can't tell whether one
+person sees it or a thousand. You have no <strong>analytics</strong>, no likes, hearts,
+or stars, no engagement dopamine. There is also no <strong>interaction</strong> with your
+your readers, no comment section, Q and A, or quote posts.
+There is also no <strong>algorithm</strong> you can game for boosting. Posts
+just show up in the order they are published.
+</p>
+
+<h3><a id="Things-you-get"></a><a href="#Things-you-get">Things you get</a></h3>
+
+<p>
+In exchange for all that, you get a more <strong>deliberate experience</strong> of reading and writing.
+There is more friction in publishing and following a feed than of downloading
+an app and snapping a picture of your latte.
+RSS requires intention, and so invites more thought.
+It makes doomscrolling all but impossible.
+Related to this, posts are often longer and more thought out than
+the Tweets of yore. In my experience there are
+<strong>more quirks and rabbit holes</strong>.
+Most importantly, you also get <strong>control</strong> over what you can publish and
+in what format.  You have independence from any rules or policy decisions
+that might be imposed by a central authority.
+There is no one who can boost it, bury it, or shut it down.
+It is an indestructible distribution channel.
+</p>
+
+<h3><a id="A-note-about-Atom"></a><a href="#A-note-about-Atom">A note about Atom</a></h3>
+
+<p>
+You don't have to spend long in the world of RSS before you start hearing about
+Atom. Atom is a very similar format that serves a very similar purpose.
+It was backed by Google and for a while there was a great deal of contention
+between proponents of RSS and Atom, which led to a lot of intense...um...discussion. 
+<a href="https://danielmiessler.com/blog/atom-rss-why-we-should-just-call-them-feeds-instead-of-rss-feeds">Atom is better</a>
+in the sense that it resolved several points of ambiguous behavior and
+unappealing flaws of RSS, but in retrospect, the "reader wars" were probably
+more distracting than productive and left the community a little fragmented.
+</p>
+
+<p>
+Atom still exists. Plenty of people still use it, although from what
+I gather RSS is more popular. Most aggregators can read both RSS and Atom just fine.
+The shortcomings of RSS are not anything that is likely to bother any but
+the geekiest users. I leave it as an exercise to the reader to decide if it
+matters enough to spend any cognitive cycles on.
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

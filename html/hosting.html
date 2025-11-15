@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Hosting your own website";</script>
+  <script type="text/javascript">var publication_date = "September 07, 2025";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+Creating a web page is only the beginning. The business of sharing it with
+the world has a lot of moving parts and a lot of choke points.
+If an ISP decides to stop traffic to your website or if your hosting platform
+goes bankrupt there isn't a lot you can do about it. But what you can do is
+have a solid Plan B -- being ready to spin up another copy of your
+website on another server. A server that you control, or at least a server
+of your choosing.
+</p>
+
+<p>
+This guide shows one way to do set up your own hosting.
+It's not the only way or even the best way.
+But it is at least a path through the desert.
+</p>
+
+<h2><a id="Choose-a-computer"></a><a href="#Choose-a-computer">Choose a computer</a></h2>
+
+<p>
+There are lots of cloud providers out there, of all sizes and in a lot
+of difference countries. Pick one. Or use a computer you have at home,
+if your ISP will let you get away with serving a website from it.
+</p>
+
+<p>
+I chose <a href="https://www.digitalocean.com/">Digital Ocean</a> because I had
+heard some good things about it and because it wasn't AWS.
+The first step there is to create an account on Digital Ocean by setting up a "Team",
+even if it's just you.
+</p>
+
+<h2><a id="Add-an-ssh-key"></a><a href="#Add-an-ssh-key">Add an ssh key</a></h2>
+
+<p>
+Create a public/private key pair on your local machine. Follow the
+Digital Ocean menus to
+</p>
+
+<p>
+<code>Settings</code> -> <code>Security</code> -> <code>Add SSH Key</code> 
+</p>
+
+<p>
+and follow the instructions there
+<a href="https://docs.digitalocean.com/platform/teams/how-to/upload-ssh-keys/">and here are some related docs
+</a>.
+</p>
+
+<p>
+It's recommended to create a passphrase for your keys, but don't forget
+to write it down.
+</p>
+
+<h2><a id="Create-a-Digital-Ocean-droplet"></a><a href="#Create-a-Digital-Ocean-droplet">Create a Digital Ocean droplet</a></h2>
+
+<p>
+Individual computers within Digital Ocean are called droplets.
+(Clever, right?)
+</p>
+
+<p>
+<a href="https://docs.digitalocean.com/products/droplets/getting-started/quickstart/#create-droplets">There's a good walkthrough</a>
+in the DO docs, and the UI is not bad.
+</p>
+
+<p>
+Importantly, make sure to add your ssh key during the creation process.
+And note the IP address.
+</p>
+
+<p>
+I chose a small box with 1 GB Memory, 25 GB Disk in the NYC data center
+running Ubuntu 24.04. Its IP address is <code>192.0.2.146</code>.
+</p>
+
+<h2><a id="ssh-in-from-a-terminal"></a><a href="#ssh-in-from-a-terminal">ssh in from a terminal</a></h2>
+
+<p>
+<pre>
+ssh root@192.0.2.146
+</pre>
+</p>
+
+<p>
+and provide your passphrase if you have one.
+</p>
+
+<p>
+<img alt="The console messages in response to an ssh to root
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/root_login.png">
+</p>
+
+<p>
+From this point, most of the steps will be the same, whether you're on Digital
+Ocean, another service provider, or a laptop, as long as it's
+running Linux. 
+</p>
+
+<h2><a id="Create-a-user"></a><a href="#Create-a-user">Create a user</a></h2>
+
+<p>
+It's possible to work as <code>root</code> all the time, but it's just too easy to
+accidentally do something destructive. Future you will thank you if you
+create a non-root user. My preferred username is <code>brohrer</code> but sub yours
+in below.
+</p>
+
+<p>
+<pre>
+sudo adduser brohrer
+</pre>
+</p>
+
+<p>
+and then create a password. A new one. One that you've never used anywhere,
+for anything.
+</p>
+
+<p>
+We'll do more with security later, but one thing you can do here is practice
+a little bit of security-through-obsurity and choose a non-obvious
+user name. <a href="https://www.flux.utah.edu/paper/singh-nsdi24">A very deep dive</a>
+on brute force ssh attacks show them to be mostly random, even including
+the usernames attempted. Choosing a common first name as a username, like
+<code>steve</code>,
+means that it's likely to get guessed far more often than, say,
+<code>stevienicks</code>. It' not any kind of hard defense, but every bit helps.
+</p>
+
+<p>
+Your new user will definitely want to do root-level things though, so
+it will need to have <code>sudo</code> permissions.
+</p>
+
+<p>
+Add the new user to the sudo-ers group
+</p>
+
+<p>
+<pre>
+sudo usermod -aG sudo brohrer
+</pre>
+</p>
+
+<p>
+Then switch into the new user role
+</p>
+
+<p>
+<pre>
+su - brohrer
+</pre>
+</p>
+
+<p>
+Test whether sudo works for you
+</p>
+
+<p>
+<pre>
+sudo dpkg-reconfigure tzdata
+</pre>
+</p>
+
+<p>
+You'll be prompted for your sudo password, which is the password for
+the user you just created. If it works, you'll see a dialog box like this
+</p>
+
+<p>
+<img alt="tzdata configuration screen, evidence that sudo permissions were bestowed
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/tzdata_config.png">
+</p>
+
+<p>
+It's also a good time to enable ssh for the new user. First make a copy
+of the authorized keys.
+</p>
+
+<p>
+<pre>
+mkdir .ssh
+sudo cp /root/.ssh/authorized_keys .ssh/
+</pre>
+</p>
+
+<p>
+The set all the ownership and permissions on them so that they will work
+for you.
+</p>
+
+<p>
+<pre>
+sudo chown -R brohrer:brohrer /home/brohrer/.ssh
+sudo chmod 0700 /home/brohrer/.ssh
+sudo chmod 0600 /home/brohrer/.ssh/authorized_keys
+</pre>
+</p>
+
+<p>
+The next time you ssh into your machine you can do it with your user name.
+</p>
+
+<p>
+<pre>
+ssh brohrer@192.0.2.146
+</pre>
+</p>
+
+<h2><a id="Install-the-Nginx-web-server-"></a><a href="#Install-the-Nginx-web-server-">Install the Nginx web server </a></h2>
+
+<p>
+Next is installing some web server software. There are a few popular ones,
+like <a href="https://httpd.apache.org">Apache</a>,
+<a href="https://nginx.org/en/index.html">nginx</a>,
+and <a href="https://caddyserver.com">Caddy</a>.
+I went with nginx, because it's realtively lightweight and exposes some
+of the wiring, but they're all good, and there are people who love them all.
+</p>
+
+<p>
+From <a href="https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-20-04">Digital Ocean docs</a>
+</p>
+
+<p>
+<pre>
+sudo apt update
+sudo apt install nginx
+</pre>
+</p>
+
+<p>
+Here are some <a href="https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-20-04#step-4-managing-the-nginx-process">useful commands for managing nginx
+</a>.
+We're not going to use them yet, but we'll be back soon.
+</p>
+
+<h2><a id="Set-up-UFW"></a><a href="#Set-up-UFW">Set up UFW</a></h2>
+
+<p>
+Before turning things on, it's helpful to set up defenses.
+The Web is really wild. Hostile and unhinged. A firewall gives you a protective
+barrier, a first line of defense for filtering out that noise.
+</p>
+
+<p>
+Linux's is a great tool for this Uncomplicated Firewall (UFW).
+The <a href="https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands">DO docs</a>
+and <a href="https://thelinuxcode.com/ufw-firewall-allow-ssh/">this page</a> give a good
+onramp, but the basics are all below.
+</p>
+
+<p>
+<code>status</code> shows whether it's up and running.
+</p>
+
+<p>
+<pre>
+sudo ufw status
+</pre>
+</p>
+
+<p>
+It's not because we haven't turned it on.
+</p>
+
+<p>
+<pre>
+Status: inactive
+</pre>
+</p>
+
+<p>
+Look at the list of apps we could add.
+</p>
+
+<p>
+<pre>
+sudo ufw app list
+</pre>
+</p>
+
+<p>
+<pre>
+Available applications:
+  Nginx Full
+  Nginx HTTP
+  Nginx HTTPS
+  OpenSSH
+</pre>
+</p>
+
+<p>
+Before you do anything else, allow <code>ssh</code> (port 22). If you don't, you can forget
+and end up turning on a firewall that blocks all ssh traffic. That makes it
+very hard to ssh into the machine to fix it. Ask me how I know.
+</p>
+
+<p>
+<pre>
+sudo ufw allow 'OpenSSH'
+</pre>
+</p>
+
+<p>
+Now you can turn on the firewall
+</p>
+
+<p>
+<pre>
+sudo ufw enable
+</pre>
+</p>
+
+<p>
+And then add nginx. This tells the firewall to allow traffic in and out
+associated with the nginx server. <code>Nginx full</code> allows both http (port 80)
+and https (port 443).
+</p>
+
+<p>
+<pre>
+sudo ufw allow 'Nginx Full'
+</pre>
+</p>
+
+<p>
+and verify that it's running.
+</p>
+
+<p>
+<pre>
+sudo ufw status
+</pre>
+</p>
+
+<p>
+<pre>
+Status: active<br>
+To                         Action      From
+--                         &mdash;&mdash;      &mdash;-
+OpenSSH                    ALLOW       Anywhere
+Nginx Full                 ALLOW       Anywhere
+OpenSSH (v6)               ALLOW       Anywhere (v6)
+Nginx Full (v6)            ALLOW       Anywhere (v6)
+</pre>
+</p>
+
+<h2><a id="Start-up-nginx"></a><a href="#Start-up-nginx">Start up nginx</a></h2>
+
+<p>
+From the command line
+</p>
+
+<p>
+<pre>
+sudo systemctl start nginx
+</pre>
+</p>
+
+<p>
+Verify the status.
+</p>
+
+<p>
+<pre>
+sudo systemctl status nginx
+</pre>
+</p>
+
+<p>
+Mine responds like this.
+</p>
+
+<p>
+<pre>
+● nginx.service - A high performance web server and a reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2025-08-24 06:48:16 EDT; 7min ago
+       Docs: man:nginx(8)
+    Process: 3072 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status>
+    Process: 3074 ExecStart=/usr/sbin/nginx -g daemon on; master_process on; (code=exited, status=0/SUCCES>
+   Main PID: 3102 (nginx)
+      Tasks: 2 (limit: 1110)
+     Memory: 1.8M (peak: 3.8M)
+        CPU: 33ms
+     CGroup: /system.slice/nginx.service
+             ├─3102 "nginx: master process /usr/sbin/nginx -g daemon on; master_process on;"
+             └─3105 "nginx: worker process"
+</pre>
+</p>
+
+<p>
+The ultimate test comes from throwing the web address of the server
+into a browser <code>http://192.0.2.146</code>. It shows
+this page if all has gone well
+</p>
+
+<p>
+<img alt="an Nginx welcome screen, evidence that Nginx was properly installed
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/nginx_welcome.png">
+</p>
+
+<p>
+The html file for this page is <code>/var/www/html/index.nginx-debian.html</code>.
+You can dump any other html files you want to share in this location too.
+I added a few others, for instance <code>pendulum.html</code>, which can be accessed
+at <code>http://192.0.2.146/pendulum.html</code>.
+</p>
+
+<h2><a id="What's-next"></a><a href="#What's-next">What's next</a></h2>
+
+<p>
+And that's a web server! You can spin up a new one any time you like
+in the time it takes to walk through this guide.
+</p>
+
+<p>
+In the next installment we'll walk through how to tie all this to a domain name
+like <code>mycoolwebsite.com</code>. That has the added benefit of giving you a consistent
+home base for your material, rather than having to share a new IP address
+every time you switch servers.
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Beef up security on your webserver";</script>
+  <script type="text/javascript">var publication_date = "September 27, 2025";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+<a href="hosting.html">Part 1</a> of this series showed how to create a new web server
+from scratch and <a href="hosting2.html">Part 2</a> showed how to set up a new
+domain name on it. Now it's time to make that website more secure, so it can
+be protected from the rougher edges of the cyber world.
+</p>
+
+<h2><a id="Enable-HTTPS"></a><a href="#Enable-HTTPS">Enable HTTPS</a></h2>
+
+<p>
+Currently the web server we've built is only serving unencrypted (http) requests,
+rather than encrypted (https) requests. https has become the standard for
+the web. It's obviously useful when sharing personal information like
+credit card numbers and love notes, but it's even beneficial for seemingly
+benign browsing. It's hard to foresee all the ways that someone might use
+the browsing habits of your readers against them. To protect them, we'll
+set up https.
+</p>
+
+<p>
+As with so many topics there is an extremely accessible explanation of
+how https works in
+<a href="https://wizardzines.com/zines/http/">The Wizard Zine on http</a>.
+</p>
+
+<p>
+If you have been following the other two posts closely, then you are perfectly
+set up to follow <a href="https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-22-04">the DigitalOcean tutorial
+</a>
+walking through https setup. It builds on all the pieces we've put in place:
+ufw, a sudo-capable non-root user, a domain name, DNS records, server blocks.
+I won't bother copying and pasting here. It's an excellent guide so I'll just
+point you to it.
+</p>
+
+<p>
+<img alt="The table of contents of the DigitalOcean tutorial
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/https_tutorial.png">
+</p>
+
+<p>
+If you later decide to add more subdomains or entirely new domains
+to your server, you can add them to your certbot with
+</p>
+
+<p>
+<pre>
+sudo certbot --expand -d blog.e2eml.school,brandonrohrer.com,www.brandonrohrer.com
+</pre>
+</p>
+
+<p>
+and you can check on them any time
+</p>
+
+<p>
+<pre>
+sudo certbot certificates
+</pre>
+</p>
+
+<h2><a id="Harden-ssh"></a><a href="#Harden-ssh">Harden ssh</a></h2>
+
+<p>
+Any publicly exposed ssh port
+gets A TON of traffic trying to worm its way in.
+In a typical five minute window, my server got requests from users named
+</p>
+
+<ul>
+<li> <code>default</code></li>
+<li> <code>admin</code></li>
+<li> <code>admin1</code></li>
+<li> <code>sysadmin</code></li>
+<li> <code>root2</code></li>
+<li> <code>user (twice)</code></li>
+<li> <code>user1</code></li>
+<li> <code>mytest</code></li>
+<li> <code>wangxx</code></li>
+<li> <code>dennis (twice)</code></li>
+<li> <code>ben</code></li>
+</ul>
+
+<p>
+<code>dennis</code> gets extra points for persistence and <code>wangxx</code> gets points for style,
+but what this drives home is that there are always people trying to get
+into your system, no matter how small a target. If they can get in by luck
+or clever guesses, they eventually will. 
+</p>
+
+<p>
+Using ssh with keys is a great start. Guessing a modern private key
+is very close to impossible.
+There are a few other things we can do to protect our new little server. 
+</p>
+
+<h3><a id="Disallow-passwords-for-login"></a><a href="#Disallow-passwords-for-login">Disallow passwords for login</a></h3>
+
+<p>
+To get the full protection of ssh keys, it's necessary to
+enforce their use all the time. You can set this up in the <code>ssh_config</code>
+file, the central location for all the settings that control ssh behavior.
+</p>
+
+<p>
+<pre>
+sudo nano /etc/ssh/ssh_config
+</pre>
+</p>
+
+<p>
+Find the commented out line containing <code>PasswordAuthentication</code>.
+Uncomment it and change it to
+</p>
+
+<p>
+<pre>
+   PasswordAuthentication no
+</pre>
+</p>
+
+<p>
+After making a change to <code>ssh_config</code> restart the ssh daemon so that
+it takes effect.
+</p>
+
+<p>
+<pre>
+sudo systemctl restart ssh
+</pre>
+</p>
+
+<h3><a id="Make-logging-verbose"></a><a href="#Make-logging-verbose">Make logging verbose</a></h3>
+
+<p>
+For diagnosing any funny behavior, you can include even more information
+in the logs. Also in <code>/etc/ssh/ssh_confg</code> add the line
+</p>
+
+<p>
+<pre>
+    LogLevel INFO
+</pre>
+</p>
+
+<p>
+To inspect the logs at any time
+</p>
+
+<p>
+<pre>
+sudo cat /var/log/auth.log
+</pre>
+</p>
+
+<p>
+This will let you see who is trying to hack into your ssh too.
+</p>
+
+<h3><a id="Keep-it-updated"></a><a href="#Keep-it-updated">Keep it updated</a></h3>
+
+<p>
+Periodically ssh in to your server and update 
+</p>
+
+<p>
+<pre>
+sudo apt update
+sudo apt upgrade -y
+</pre>
+</p>
+
+<h3><a id="ssh-by-domain-name-rather-than-IP-address"></a><a href="#ssh-by-domain-name-rather-than-IP-address">ssh by domain name rather than IP address</a></h3>
+
+<p>
+As a helpful reader pointed out, any workflow that requires us to remember
+an IP address is flawed. With a few notable exceptions humans are really bad
+at consistently remembering strings of numbers. 
+You can set it up so that you can 
+</p>
+
+<p>
+<pre>
+ssh myserver
+</pre>
+</p>
+
+<p>
+instead of having to remember any numbers.
+</p>
+
+<p>
+On your local machine&mdash;the one you have hands on keyboard&mdash; open
+<code>~/.ssh/config</code> for editing and add lines that look like this
+</p>
+
+<p>
+<pre>
+Host myserver
+  Hostname 192.0.2.146
+  User brohrer
+</pre>
+</p>
+
+<p>
+From now on ssh will re-interpret <code>ssh myserver</code> as
+<code>ssh brohrer@192.0.2.146</code>. If you need to log on as another user you
+can still do it the old fashioned way: <code>ssh anotheruser@192.0.2.146</code>. 
+</p>
+
+<p>
+<hr>
+</p>
+
+<p>
+This collection of defenses puts the web server in a reasonably strong
+state. Nothing connected to the internet is ever perfectly protected,
+but this makes the server a less appealing target than others.
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+\documentclass{article}
+
+%\usepackage{hyperref}
+%\usepackage[accepted]{icml2023}
+
+% For theorems and such
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+
+\begin{document}
+
+\begin{equation}
+T_{measured} = T_{world} + \delta_{heating} 
+\end{equation}
+
+\begin{equation}
+\delta_{heating} = 3.9 ^ \circ \mbox{C} 
+\end{equation}
+
+\begin{equation}
+T_{measured} = T_{world} + \delta_{heating} + \delta_{convection}
+\end{equation}
+
+\begin{equation}
+\delta_{convection} = -1.9 ^ \circ \mbox{C} 
+\end{equation}
+
+\begin{eqnarray}
+T_{filtered\_ new} &=& T_{filtered\_old} \times (1 - adaptation\_rate) + \\
+&& T_{measured} \times adaptation\_rate 
+\end{eqnarray}
+
+\end{document}

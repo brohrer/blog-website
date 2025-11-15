@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Traffic Control";</script>
+  <script type="text/javascript">var publication_date = "November 10, 2025";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+The internet is a pretty rough and tumble place to hang out.
+It's not even that there are so many jerks out there, it's just that
+all of them can reach you at once.
+Luckily you have the power to shut them down.
+</p>
+
+<p>
+This installment focuses on blocking IP addresses that are doing things
+they shouldn't. It's the lastest in a series of posts on
+</p>
+
+<ol>
+<li> <a href="hosting.html">Setting up a webserver</a></li>
+<li> <a href="hosting2.html">Setting up a domain name</a></li>
+<li> <a href="hosting3.html">Setting up some security</a></li>
+<li> <a href="hosting4.html">Keeping a webserver healthy</a></li>
+</ol>
+
+<h2><a id="Block-an-IP-address"></a><a href="#Block-an-IP-address">Block an IP address</a></h2>
+
+<p>
+The most straightforward way to block and IP address is in the firewall.
+It is the tool build specifically for this.
+</p>
+
+<p>
+To block the address <code>101.101.101.101</code>, run from the command line
+</p>
+
+<p>
+<pre>
+sudo ufw insert 1 deny from 101.101.101.101
+</pre>
+</p>
+
+<p>
+This instructs ufw (the Uncomplicated FireWall) to insert a rule at the
+the top of the list (position 1) to deny all incoming traffic from
+the address. After running this, no restart of the firewall is needed.
+The rule is active.
+(<a href="https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands) ">ufw docs</a>
+</p>
+
+<p>
+The position 1 is important because in ufw, the first rule that matches
+is applied. If there was a rule to allow all addresses that started
+with <code>101.</code> and that rule came before the deny rule, then the deny
+rule would never be reached.
+</p>
+
+<p>
+While it's possible to block specific ports, or even to block an
+IP address from seeing particular pages, complex rules
+and conditions get difficult to analyze very quickly, and can lead to cases
+where there are loopholes. Use fancy rule combinations sparingly.
+</p>
+
+<h2><a id="Parse-logs"></a><a href="#Parse-logs">Parse logs</a></h2>
+
+<p>
+In their raw form access logs are technically human-readable, but they are
+a lot. I found it really useful to do a little parsing to pull out the bits
+I'm interested in.
+(I'm working with the default nginx log format, so adjust this
+according to your own.)
+</p>
+
+<p>
+I <a href="https://codeberg.org/brohrer/webserver-toolbox/src/branch/main/log_reader.py">wrote a script</a>
+to take advantage of the repeatable structure of these logs
+to dissect them into their parts. It uses tricks like splitting the log
+based on brackets and spaces. It productes a pandas dataframe with
+columns containing the IP address, requested URI, HTTP status code,
+and every component of the date and time.
+</p>
+
+<p>
+If you use exactly the same setup and log format as I do you might be
+able to get away with using this code right out of the box. More likely
+you'll have to (or want to) adjust it a bit for your own circumstances.
+Make it your own!
+</p>
+
+<p>
+This better organized version of the log can be used to generate a list
+of pages that were queried, a list of IP addresses that visited the site,
+or even just a chronological list of every access attempt.
+</p>
+
+<p>
+Here's a
+<a href="https://codeberg.org/brohrer/webserver-toolbox/src/branch/main/pages.py">pages.py</a>
+script that shows how many times pages were hit in a given day, for example
+</p>
+
+<p>
+<figure>
+  <img title="Count and page names" alt="Sample output from pages.py
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/pages_outputs.png">
+  <figcaption>Count and page names</figcaption>
+</figure>
+</p>
+
+<p>
+Here's a 
+<a href="https://codeberg.org/brohrer/webserver-toolbox/src/branch/main/ips.py "Count and IP address"">ips.py</a>
+script that shows how many times a particular IP address visited that day
+</p>
+
+<p>
+<img alt="Sample output from ips.py
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/ips_outputs.png">
+</p>
+
+<p>
+Here's a
+<a href="https://codeberg.org/brohrer/webserver-toolbox/src/branch/main/history.py">history.py</a>
+script that just repeats the access logs directly, but in a stripped down format that's easier to read.
+</p>
+
+<p>
+<figure>
+  <img title="Time, HTTP status, IP address, and page name" alt="Sample output from history.py
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/history_outputs.png">
+  <figcaption>Time, HTTP status, IP address, and page name</figcaption>
+</figure>
+</p>
+
+<h2><a id="Browsing-the-logs"></a><a href="#Browsing-the-logs">Browsing the logs</a></h2>
+
+<p>
+At first glance these logs are just an unbroken wall of text, but after
+spending a couple of minutes with them, oddities emerge.
+</p>
+
+<p>
+Looking at the IP address access count, why is there one address that accessed
+the website 633 times? That's more than four times the next most frequent.
+What was happening there? Surely that can't be legit, can it?
+</p>
+
+<p>
+Looking at the access history, why was someone trying to find a
+2016 New York Times article on this website? (The funny characters that come
+before are a utf-8 encoding of a unicode right double quotation mark.)
+That looks like someone was really flailing.
+</p>
+
+<p>
+Looking at the pages viewed, once you get past the stylesheets,
+javascripts, feed.xml., and robots.txt, there is the top-level blog,
+a popular post about transformers which I put a ton of effort into, and
+then <code>ssh_at_home</code>, a hastily-written set of notes about setting
+up an ssh server for personal use. Why is that one so regularly visited?
+</p>
+
+<p>
+The longer you look, the more questions arise. Some of the most
+interesting patterns come from people doing mischief.
+</p>
+
+<h2><a id="Bad-behavior-#1:-Scanning-for-secrets"></a><a href="#Bad-behavior-#1:-Scanning-for-secrets">Bad behavior #1: Scanning for secrets</a></h2>
+
+<p>
+<figure>
+  <img title="Looking for juicy passwords and tokens" alt="Access log history showing scanning for secrets
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/scanning_secrets.png">
+  <figcaption>Looking for juicy passwords and tokens</figcaption>
+</figure>
+</p>
+
+<p>
+Here, a single IP address quickly tries to access a handful of variations
+on a <code>.env</code> file, which is a common place to store access tokens
+and other credentials. There is no good reason to be doing this, unless
+you are doing it to yourself, proactively scanning for vulnerabilities
+in order to fix them.
+</p>
+
+<p>
+In my judgment this is a one-strike-and-you're out behavior. This IP
+address will get added to my block list.
+Luckily we already blocked access to all dot-files in the nginx server block
+during initial setup. That's why these are resulting in a 403 status code
+(access denied) rather than a 404 (not found). But if someone is doing this
+they may be looking for other ways into your system. Why not just block
+them at the firewall?
+</p>
+
+<h2><a id="Bad-behavior-#2:-Fishing-for-files"></a><a href="#Bad-behavior-#2:-Fishing-for-files">Bad behavior #2: Fishing for files</a></h2>
+
+<p>
+<figure>
+  <img title="Someone really wants my website to be written in php" alt="Access log history showing fishing for php files
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/fishing_files.png">
+  <figcaption>Someone really wants my website to be written in php</figcaption>
+</figure>
+</p>
+
+<p>
+In this segment, a single IP address is trying to find a
+php file, and they appear to be randomly casting about. These files
+don't exist on my webserver and never have. This requestor appears to 
+be shooting in the dark for files that they do not have a link to.
+I don't know why, but I don't like it. I have all
+php files blocked in my server block, but still this behavior shows someone
+doing something other than browsing my website, which leads me not
+to trust them. For me, this is a blockable offense.
+</p>
+
+<p>
+Other file fishing I see often is for WordPress-related files.
+</p>
+
+<p>
+<figure>
+  <img title="Someone really wants my website to be written in WordPress" alt="Access log history showing fishing for WordPress files
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/fishing_wordpress.png">
+  <figcaption>Someone really wants my website to be written in WordPress</figcaption>
+</figure>
+</p>
+
+<p>
+I also get requests trying to access links from my pages, as if they were
+hosted on my server, such as 
+<code>/%20%20%20%20%20%20%20%20%20%20%20%20https:/en.wikipedia.org/wiki/Convolution</code>.
+The <code>%20</code> is URL encoding for a space character. I also don't know why 
+there are 12 spaces in front of the URL. It looks like sloppy automated
+parsing of a bot accessing links that were extracted from my html files.
+I don't know what benign purpose this could serve. I'm content to
+block these as well.
+</p>
+
+<p>
+With the history browser there is a <code>--status</code> argument that lets you
+quickly see just the 404's and 403's and 400's (bad request error) 
+and helps the file fishing to pop out.
+</p>
+
+<p>
+<pre>
+uv run history.py --status 404
+</pre>
+</p>
+
+<h2><a id="Bad-behavior-#3:-Rapid-fire-requests"></a><a href="#Bad-behavior-#3:-Rapid-fire-requests">Bad behavior #3: Rapid-fire requests</a></h2>
+
+<p>
+<figure>
+  <img title="More than ten requests per second is a lot." alt="Access log history showing two dozen requests in the span of two seconds
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/too_fast_requests.png">
+  <figcaption>More than ten requests per second is a lot.</figcaption>
+</figure>
+</p>
+
+<p>
+Sometimes an IP address will make a lot of requests in quick succession.
+Most of the time this is a mild annoyance, but when taken to an extreme
+it floods the server, preventing any other requests from getting through.
+It denies everyone else service, earning the name Denial of Service (DOS),
+and whether done maliciously or through negligence, the effect on your
+website is the same.
+</p>
+
+<p>
+A lot of back-to-back requests is almost always a hallmark of automated
+scraping. It's a personal judgment call, how much you want to support this.
+The intended audience for my website is individuals, rather than
+AI-training companies or even search engines, so I'm comfortable
+making life uncomfortable for bulk-scrapers. There are two ways to do this.
+</p>
+
+<p>
+The first is to set up rate limiting. One rate limiting mechanism is a
+polite request in the <code>robots.txt</code> file to limit requests to, say,
+one every 5 seconds. 
+</p>
+
+<p>
+<pre>
+User-agent: *
+Crawl-delay: 5
+</pre>
+</p>
+
+<p>
+Unfortunately, manners are in short supply on the internets, and most
+crawlers and scrapers, including Google, ignores this directive.
+(<a href="https://www.heise.de/en/background/Obituary-Farewell-to-robots-txt-1994-2025-10766991.html">A cheeky obituary for robots.txt</a>
+declared it died in July 2025.) We can
+resort to more draconian measures and use nginx to implement per-IP rate
+limiting on the webserver.
+</p>
+
+<p>
+This is done with a modification to the server block, as
+<a href="https://codeberg.org/brohrer/webserver-toolbox/src/commit/ad139aa48eb2d173d9dc9114759e48c485375b9e/server_blocks/brandonrohrer.com#L4">here</a>
+and
+<a href="https://codeberg.org/brohrer/webserver-toolbox/src/commit/ad139aa48eb2d173d9dc9114759e48c485375b9e/server_blocks/brandonrohrer.com#L15">here</a>
+</p>
+
+<p>
+<pre>limit_req_zone $binary_remote_addr zone=one:1m rate=1r/s;<br>
+server {
+    limit_req zone=one burst=10 nodelay;
+    limit_req_status 429;
+}
+</pre>
+</p>
+
+<p>
+These lines create a "zone", a 1MB history of IP addresses
+that have made requests. On average, they should be making no more than
+1 request per second. It allows for "bursts" of 10 additional requests,
+serving them immediately with no delay, but anything in excess of that which
+violates the rate limit will receive a HTTP status code of 429
+(too many requests).
+</p>
+
+<p>
+There are a lot of possible variations to this, but this is the basic
+pattern. For a deep dive, check out
+<a href="https://nginx.org/en/docs/http/ngx_http_limit_req_module.html">the nginx docs</a>.
+</p>
+
+<p>
+And of course it's always possible to block IP addresses who try to pull this.
+</p>
+
+<h2><a id="Bad-behavior-#4:-Trying-to-hide-rapid-fire-requests"></a><a href="#Bad-behavior-#4:-Trying-to-hide-rapid-fire-requests">Bad behavior #4: Trying to hide rapid-fire requests</a></h2>
+
+<p>
+<figure>
+  <img title="You're not fooling anyone." alt="Access log history showing three dozen coordinated requests in one second
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/botnet.png">
+  <figcaption>You're not fooling anyone.</figcaption>
+</figure>
+</p>
+
+<p>
+Given how easy it was to rate limit a single IP address it should come as no
+surprise that enterprising webscrapers have found a cheat. If they split their
+requests across a whole bunch of IP addresses, then rate limiting on a
+single address doesn't slow them down.
+</p>
+
+<p>
+This even hides behing a respectable-sounding techy name: <a href="https://medium.com/@datajournal/best-rotating-proxies-tested-303539da1e2a">rotating proxies</a>.
+But underneath it's just a way to get around website admins' express desire
+that these jerks <em>not</em> do this thing.
+</p>
+
+<p>
+Detecting this is trickier. In the example above, it's clear to a human
+eye, that the requests are part of a coordinated scraping operation.
+They all occur within one second. They are all requesting a .png
+within the same directory. The IP addresses, while containing just
+a few repeats, fall into a handful of clusters. But writing rules
+for automating this is hard. Every rule you can come up with will
+probably miss some coordinated scraping, or deny some legitimate traffic,
+or both. Even machine learning methods, which can take multiple factors
+into account, may not be able to do this cleanly.
+</p>
+
+<p>
+Of course dangling a tricky problem like this in front of nerd is like waving
+a red cape in front of an angry bull. I'll probably come back to deeper
+treatment of it later. For now the only strategy I can recommend is manually
+blocking every single IP address involved.
+</p>
+
+<h2><a id="Bad-behavior-#5:-Attempting-unsupported-actions"></a><a href="#Bad-behavior-#5:-Attempting-unsupported-actions">Bad behavior #5: Attempting unsupported actions</a></h2>
+
+<p>
+<figure>
+  <img title="Someone with PROPFIND is not to be deterred." alt="Some HTTP request actions other than GET
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/illegal_actions.png">
+  <figcaption>Someone with PROPFIND is not to be deterred.</figcaption>
+</figure>
+</p>
+
+<p>
+There are just a handful of things you can do over HTTP. <code>GET</code> and <code>POST</code> are
+the most common, and <code>HEAD</code> comes up sometimes (get info about a page
+without downloading it) but there are others that almost never come up in
+the normal course of events. <code>PROPFIND</code> is a way to gather information about
+all the available files on a server. It's easy to imagine how convenient that
+would be for a scraper. <code>CONNECT</code> sets up an open pipe for data to flow to
+and from a server. Nothing I would want to enable for a client I don't know
+and trust.
+</p>
+
+<p>
+For my little static website in particular, the only valid actions are
+<code>GET</code> and <code>HEAD</code>. There is nothing to <code>PUT</code> or <code>POST</code> and everything
+else I have no intention of allowing. I've never offered these actions
+for any purpose, and it's very likely that any requests that contain them
+are trying to get access to data and functionality they shouldn't have.
+Block-worthy behavior in my book.
+</p>
+
+<h2><a id="Blocking-revisited"></a><a href="#Blocking-revisited">Blocking revisited</a></h2>
+
+<p>
+From the list above, there are a lot of offenses that can get an IP
+address blocked, and a lot of IP addresses that commit them.
+It would be possible to manually update the firewall rules for each one
+at the command line by running something like this
+</p>
+
+<p>
+<pre>
+sudo ufw insert 1 deny from 101.101.101.101
+</pre>
+</p>
+
+<p>
+for every blocked address, but after my blocklist passed several dozen addresses
+it started to feel tedious.
+Updating the list became difficult after the list passed 100 addresses.
+When adding new addresses manually I didn't want to duplicate the ones
+that were already there, so I sorted them and added new ones into the
+list where they belong. Duplicates were readily apparent. But after the
+list grew to fill several screens lengths, updating became slow.
+</p>
+
+<p>
+To streamline, I created a
+<a href="https://codeberg.org/brohrer/webserver-toolbox/src/branch/main/blocklist_additions.txt">blocklist_additions.txt</a>
+with every IP address I wanted to disallow. Then a small Python script
+<a href="https://codeberg.org/brohrer/webserver-toolbox/src/branch/main/update_firewall.py">update_firewall.py</a>
+was all I needed to automatically run the list.
+</p>
+
+<p>
+<pre>
+sudo python3 update_firewall.py
+</pre>
+</p>
+
+<p>
+This lets me browse through the logs and manually add problematic
+IP addresses to the file <code>blocklist_additions.txt</code> on the server.
+Then I can update the firewall with the latest changes.
+</p>
+
+<p>
+Some of these behavior violations should be straightforward to detect
+programmatically. Automating firewall updates will be an adventure
+for another day.
+</p>
+
+<p>
+October 6, 2025
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

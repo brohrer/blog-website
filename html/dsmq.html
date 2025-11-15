@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "dsmq";</script>
+  <script type="text/javascript">var publication_date = "December 1, 2024";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script type="text/javascript" src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript" src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>I&#39;d like to introduce <a href="https://github.com/brohrer/dsmq">dsmq</a>, the Dead Simple Message Queue, to the world.</p>
+        <p>Part mail room, part bulletin board, dsmq is a central location for sharing messages between processes, even when they are running on different computers.</p>
+        <p>Its defining characteristic is bare-bones simplicity.</p>
+        <p><img src="https://brandonrohrer.com/images/dsmq/dsmq_00.png" alt="
+        A screenshot of the dsmq GitHub repository:
+        src/dsmq,
+        .python-version,
+        LICENSE,
+        README.md,
+        pyproject.toml,
+        README,
+        MIT license,
+        Dead Simple Message Queue
+        What it does
+        Part mail room, part bulletin board, dsmq is a central location
+        for sharing messages between processes, even when they are running
+        on computers scattered around the world.
+        Its defining characteristic is bare-bones simplicity.
+        "></p>
+        <h2>What dsmq does</h2>
+        <p>A message queue lets different processes talk to each other, within or across machines. Message queues are a waystation, a place to publish messages and hold them until they get picked up by the process that needs them.</p>
+        <p>In dsmq, a program running the message queue starts up first (the server). It handles all the receiving, delivering, sorting, and storing of messages.</p>
+        <p>Other programs (the clients) connect to the server. They add messages to a queue or read messages from a queue. Each queue is a separate topic. </p>
+        <h2>Why message queues?</h2>
+        <p>Message queues are invaluable for distributed systems of all sorts, but my favorite application is robotics. Robots typically have several (or many) processes doing different things at different speeds. Communication between processes is a fundamental part of any moderately complex automated system. When <a href="https://www.ros.org">ROS</a> (the Robot Operating System) was released, one of the big gifts it gave to robot builders was a reliable way to pass messages.</p>
+        <h2>Why another message queue?</h2>
+        <p>There are lots of <a href="https://en.wikipedia.org/wiki/Message_queue">message queues</a> in the world, and some are quite well known&mdash;Amazon SQS, RabbitMQ, Apache Kafka to name a few. It&#39;s fair to ask why this one was created.</p>
+        <p>The official reason for dsmq&#39;s existence is that all the other available options are pretty heavy. Take RabbitMQ for instance, a popular open source message queue. It has hundreds of associated repositories and it&#39;s core <a href="https://github.com/rabbitmq/rabbitmq-server">rabbitmq-server</a> repo has many thousands of lines of code. It&#39;s a heavy lift to import this to support a small robotics project, and code running on small edge devices may struggle to run it at all.</p>
+        <p>RabbitMQ is also mature and optimized and dockerized and multi-platform and fully featured and a lot of other things a robot doesn&#39;t need. It would be out of balance to use it for a small project.</p>
+        <p>dsmq is only about 200 lines of Python, including client and server code. It&#39;s <em>tiny</em>. Good for reading and understanding front-to-back when you&#39;re integrating it with your project.</p>
+        <p>But the real reason is that I wanted to understand how a message queue might work and the best way I know to learn this is to build one.</p>
+        <h2>How to use dsmq</h2>
+        <h3>Install it</h3>
+        <pre><code>pip install dsmq</code></pre>
+        <p>or</p>
+        <pre><code>uv add dsmq</code></pre>
+        <h3>Spin up a dsmq server</h3>
+<pre><code class="language-python">from dsmq import dsmq
+dsmq.start_server(host=&quot;127.0.0.1&quot;, port=12345)</code></pre>
+        <h3>Connect a client to a dsmq server</h3>
+        <pre><code class="language-python">mq = dsmq.connect_to_server(host=&quot;127.0.0.1&quot;, port=12345)</code></pre>
+        <h3>Add a message to a topic queue</h3>
+<pre><code class="language-python">topic = &quot;greetings&quot;
+msg = &quot;hello world!&quot;
+mq.put(topic, msg)</code></pre>
+        <h3>Read a message from a topic queue</h3>
+<pre><code class="language-python">topic = &quot;greetings&quot;
+msg = mq.get(topic)</code></pre>
+        <h3>Run a demo</h3>
+        <ol start="0">
+        <li>Open 3 separate terminal windows.</li>
+        <li>In the first, run <code>src/dsmq/dsmq.py</code>.</li>
+        <li>In the second, run <code>src/dsmq/example_put_client.py</code>.</li>
+        <li>In the third, run <code>src/dsmq/example_get_client.py</code>.</li>
+        </ol>
+        <p>Alternatively, if you&#39;re on Linux just run <code>src/dsmq/demo_linux.py</code>. (Linux has some process forking capabilities that Windows doesn&#39;t and that macOS forbids. It makes for a nice self-contained multiprocess demo.)</p>
+        <h2>How it works</h2>
+        <ul>
+        <li>&#9642; Many clients can read messages from the same topic queue. dsmq uses a one-to-many publication model.
+        </li>
+        <li>&#9642; A client will get the oldest message available on a requested topic. Queues are first-in-first-out.
+        </li>
+        <li>&#9642; Clients will only be able to get messages that were added to a queue after the time they connected to the server. Any messages older that that won&#39;t be visible.
+        </li>
+        <li>&#9642; dsmq is asyncronous. There are no guarantees about how soon a message will arrive at its intended client.
+        </li>
+        <li>&#9642; dsmq is backed by an in-memory SQLite database. If your message volumes get larger than your RAM, you will reach an out-of-memory condition.
+        </li>
+        </ul>
+        <pre><code class="language-python">sqlite_conn = sqlite3.connect(&quot;file:mem1?mode=memory&amp;cache=shared&quot;)</code></pre>
+        <ul>
+        <li>&#9642; <code>put()</code> and <code>get()</code> operations are fairly quick&mdash;less than 100 &mu;s of processing time plus any network latency&mdash;so it can comfortably handle requests at rates of hundreds of times per second. But if you have several clients reading and writing at 1 kHz or more, you may overload the queue.
+        </li>
+        <li>&#9642; A client will not be able to read any of the messages that were put into a queue before it connected.
+        </li>
+        <li>&#9642; Messages older than 600 seconds will be deleted from the queue.
+        </li>
+        <li>&#9642; In case of contention for the lock on the database, failed queries will be retried several times, with exponential backoff. None of this is visible to the clients, but it helps keep the internal operations reliable.
+        </li>
+        </ul>
+<pre><code class="language-python">for i_retry in range(_n_retries):
+    try:
+        cursor.execute(&quot;&quot;&quot;...  </code></pre>
+        <ul>
+        <li>&#9642; To keep things bare bones, the connections are all implemented in the socket layer, rather than WebSockets or http in the application layer.</li>
+        </ul>
+<pre><code class="language-python">self.dsmq_conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+self.dsmq_conn.connect((host, port)) </code></pre>
+        <ul>
+        <li>&#9642; ...however, working on this lower level meant dsmq had to reinvent the wheel of message headers. Each dsmq message is sent with a header that tells it exactly how many bytes to expect in it. The header format is simplistic&mdash;a message with one million plus the number of byes in the following message. Doing it this way means that the header is exactly 23 bytes long every time. (As long as the message is less than nine million bytes.)
+        </li>
+        <li>&#9642; Every time a new client connects to the server, a new thread is created. That thread listens for any <code>get()</code> or <code>put()</code> requests the client might make and handles them immediately.
+        </li>
+        </ul>
+        <pre><code class="language-python">Thread(target=_handle_client_connection, args=(socket_conn,)).start()</code></pre>
+        <ul>
+        <li>&#9642; dsmq retrieves the oldest eligible message from the queue. If a client wants to ensure it is getting the most recent message from the queue, it will need to iteratively get messages until there are no more left to be gotten.</li>
+        </ul>
+<pre><code class="language-python">msg_str = &quot;&lt;no response&gt;&quot;
+response = None
+while response != &quot;&quot;:
+    msg_str = response
+    response = self.mq.get(&quot;&lt;topic&gt;&quot;)</code></pre>
+        <ul>
+        <li>&#9642; dsmq messages are text fields, but Python dictionaries are a very convenient and common format for passing structured messages. Use the <code>json</code> library to convert from dictionaries to strings and back.</li>
+        </ul>
+<pre><code class="language-python">topic = &quot;update&quot;
+msg_dict = {&quot;timestep&quot;: 374, &quot;value&quot;: 3.897}
+msg_str = json.dumps(msg_dict)
+dsmq.put(topic, msg_str)
+
+msg_str = dsmq.get(topic)
+msg_dict = json.loads(msg_str)</code></pre>
+        <ul>
+        <li>&#9642; dsmq is opinionated. Parameters for controlling behavior are set to reasonable defaults and not exposed to the user. The additional complexity in the API is not worth the value of making them user-controlled. However they are also clearly labeled and very easy to find. If anyone cares enough to play with them, they are strongly encouraged to fork dsmq and make it their own.</li>
+        </ul>
+<pre><code class="language-python">_message_length_offset = 1_000_000
+_header_length = 23
+_n_retries = 5
+_first_retry = 0.01  # seconds
+_time_to_live = 600.0  # seconds </code></pre>
+        <ul>
+        <li>&#9642; dsmq is deliberately built to have as few dependencies as it can get away with. As of this writing, it doesn&#39;t depend on any third party packages and just a handful of core packages: <code>json</code>, <code>socket</code>, <code>sqlite3</code>, <code>sys</code>, and <code>threading</code>.</li>
+        </ul>
+        <h1>Dead Simple</h1>
+        <p>Dead simple is an aesthetic. It says that the ideal is achieved not when nothing more can be added, but when nothing more can be taken away. It is the aims to follow the apocryphal advice of Albert Einstein, to make a thing as simple as possible, but no simpler.
+        <p>Dead simple is like keystroke golfing, but instead of minimizing the number of characters, it minimizes the number of concepts a developer or a user has to hold in their head.
+        <p>I&#39;ve tried to embody it in dsmq. dsmq has fewer lines of code than RabbitMQ has <em>repositories</em>. And that tickles me. 
+        <hr>
+        <h3>Update</h3>
+        <p>As of January 2025, dsmq uses
+        <a href="https://github.com/python-websockets/websockets">
+        websockets</a> for communication, instead
+        of sockets. They are at a higher level of abstration than sockets
+        (the application layer) but they do it well, keeping
+        things simple and robust. They also make it easier to read
+        messages right into javascript, if you were going to, say,
+        create some web-based monitoring and animations.
+
+        <script type="text/javascript" src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script type="text/javascript" src="javascripts/blog_footer.js"></script>
+  </body>
+</html>
