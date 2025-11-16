@@ -4,12 +4,12 @@ document.write('\
         <header class="inner">\
           <h1 id="project_title">' + blog_title + '</h1>\
             <h4>\
-              <a id="project_tagline" href="https://brandonrohrer.com/">\
+              <a id="project_tagline" href="blog.html">\
                 Brandon Rohrer\
               </a>\
             </h4>\
             <p>\
-              <a href="https://brandonrohrer.com/blog.html">\
+              <a href="blog.html">\
                 The Blog </a>\
               &ensp; &ensp; \
               <a href="https://brandonrohrer.com/feed.xml">\

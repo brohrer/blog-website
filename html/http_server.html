@@ -18,8 +18,8 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-<p>This is the sequel to a post walking through an <a href="https://www.brandonrohrer.com/http_client.html">HTTP client in Python</a>. The client in that post sent a request to a server that performs addition. This post walks through the code for that server</p>
-<p><a href="https://www.brandonrohrer.com/server_naming.html">Server terminology</a> can be confusing. &quot;Server&quot; can refer to both the program that listens for HTTP messages and the metal and ceramic box sitting in a rack in a data center where that program runs. In this post, we are focusing on the first of those.</p>
+<p>This is the sequel to a post walking through an <a href="http_client.html">HTTP client in Python</a>. The client in that post sent a request to a server that performs addition. This post walks through the code for that server</p>
+<p><a href="server_naming.html">Server terminology</a> can be confusing. &quot;Server&quot; can refer to both the program that listens for HTTP messages and the metal and ceramic box sitting in a rack in a data center where that program runs. In this post, we are focusing on the first of those.</p>
 <h2>Some Python</h2>
 <p>Here&#39;s the code for the server. We&#39;ll spend the rest of the post stepping through it.</p>
 <pre><code>from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -88,7 +88,7 @@ httpd.serve_forever()
     self.rfile.read(content_length).decode(&#39;utf-8&#39;)
 )
 </code></pre>
-<p>Other than those differences, the operations for reading and transforming the headers and body are the same as <a href="https://www.brandonrohrer.com/http_client.html">what the client does</a> when interpreting response messages.</p>
+<p>Other than those differences, the operations for reading and transforming the headers and body are the same as <a href="http_client.html">what the client does</a> when interpreting response messages.</p>
 <p>The path argument is also available via the attribute <code>self.path</code> It doesn&#39;t get used in the addition server, so the code never bothers to call it, but it&#39;s there.</p>
 <p>After the request body is fully ingested, any information or arguments it contains can be taken and used to do whatever it is the server intends to do. This particular server looks for a JSON payload, which gets translated into a Python dict. The two keys it expects to find are <code>val_a</code> and <code>val_b</code>, which it adds together.</p>
 <pre><code>answer = request_body[&quot;val_a&quot;] + request_body[&quot;val_b&quot;]

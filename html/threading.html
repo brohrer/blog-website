@@ -164,7 +164,7 @@ for i in range(10):
         </p>
         <p>
         Threading will only speed up your run times if your code is spending a lot time waiting around. Even after breaking your program up into several threads, they still are part of one process, that is, they take the form of a single set of instructions that run on a single processor in your computer. If your code is already using all the cycles on one processor, then breaking it up into threads won’t change that. (For that you want Python's
-        <a href="https://docs.python.org/3/library/multiprocessing.html">multiprocessing package</a>. Here’s <a href="https://brandonrohrer.com/multiprocessing.html">a streamlined introduction</a> to it.)
+        <a href="https://docs.python.org/3/library/multiprocessing.html">multiprocessing package</a>. Here’s <a href="multiprocessing.html">a streamlined introduction</a> to it.)
         </p>
         <p>
         Another good reason to use threading is that it can simplify your code. You can accomplish almost everything that threading does with some clever flow control, but it will make your code a whole lot less readable. Setting up multiple threads can make it easier to explain to a colleague or a rubber duck. You'll be grateful when you come back to it a month from now and try to figure out what the hell you were thinking when you wrote it.

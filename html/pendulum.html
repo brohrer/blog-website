@@ -32,18 +32,18 @@ to control a simulated pendulum:
 </p>
 
 <ul>
-<li> <a href="https://www.brandonrohrer.com/buckettree">BucketTree</a>
+<li> <a href="buckettree">BucketTree</a>
 to learn a discretization of the pendulum’s continuous
 state variables, angle and angular velocity,</li>
-<li> <a href="https://www.brandonrohrer.com/ziptie">Ziptie</a>
+<li> <a href="ziptie">Ziptie</a>
 to bundle the discretized values into discrete states,</li>
-<li> <a href="https://www.brandonrohrer.com/fnc">Fuzzy Naive Cartographer</a>
+<li> <a href="fnc">Fuzzy Naive Cartographer</a>
 (FNC) to learn common state-action-state sequences
 and to make conditional predictions of reward for each action.</li>
 </ul>
 
 <p>
-It all runs in <a href="https://www.brandonrohrer.com/myrtle">Myrtle</a>,
+It all runs in <a href="myrtle">Myrtle</a>,
 a real-time reinforcement learning workbench.
 </p>
 
@@ -397,7 +397,7 @@ in to some steady state learning rate floor, say 0.03.
 
 <p>
 A method called
-<a href="https://www.brandonrohrer.com/fnc) (FNC">Fuzzy Naive Cartographer</a>
+<a href="fnc) (FNC">Fuzzy Naive Cartographer</a>
 uses this trick to learn state-action values more quickly.
 It is an approach I developed to learning state-action-state transition
 world models, but it also learns a state-action-reward value function.
@@ -447,7 +447,7 @@ of a designer.
 </p>
 
 <p>
-The <a href="https://www.brandonrohrer.com/ziptie">Ziptie</a> algorithm is developed
+The <a href="ziptie">Ziptie</a> algorithm is developed
 to solve exactly this problem. In the case of the pendulum, Ziptie takes in all
 the discrete pendulum positions and all the discrete velocity values and 
 learns to pair every position with every velocity. It's not really
@@ -638,7 +638,7 @@ action then may no longer be.
 This is the challenge of operating in real-time, grounded in a wall clock.
 The whole pendulum exercise above has been completed with this real-time
 constraint in force. I created the RL workbench
-<a href="https://brandonrohrer.com/myrtle">Myrtle</a> to do exactly this.
+<a href="myrtle">Myrtle</a> to do exactly this.
 </p>
 
 <p>
@@ -892,7 +892,7 @@ more domain knowledge (known in Bayesian circles as <em>priors</em>).
 Exhaustive search falls on the other
 side. It's horribly inefficient, but assumes nothing about the
 way hyperparameters act or interact. A middle ground can be found in
-<a href="https://www.brandonrohrer.com/evopowell.html">Evolutionary Powell's method</a>,
+<a href="evopowell.html">Evolutionary Powell's method</a>,
 a method I created to randomly explore the hyperparameter space, but
 in a way that is weighted toward the most successful runs seen so far.
 </p>
@@ -991,17 +991,17 @@ about reward and timing, and how to view an animation in the browser.
 <h2><a id="Learn-more"></a><a href="#Learn-more">Learn more</a></h2>
 
 <ul>
-<li> <a href="https://www.brandonrohrer.com/buckettree">BucketTree code</a></li>
+<li> <a href="buckettree">BucketTree code</a></li>
 <li> <a href="https://gitlab.com/brohrer/ponderosa/-/blob/main/ponderosa/optimizers.py?ref_type=heads#L91">Evolutionary Powell's method code</a></li>
-<li> <a href="https://www.brandonrohrer.com/evopowell.html">Evolutionary Powell's method post</a></li>
+<li> <a href="evopowell.html">Evolutionary Powell's method post</a></li>
 <li> <a href="https://codeberg.org/brohrer/cartographer/">Fuzzy Naive Cartographer code</a></li>
-<li> <a href="https://www.brandonrohrer.com/cartographer">Fuzzy Naive Cartographer paper</a></li>
-<li> <a href="https://www.brandonrohrer.com/myrtle">Myrtle code</a></li>
+<li> <a href="cartographer">Fuzzy Naive Cartographer paper</a></li>
+<li> <a href="myrtle">Myrtle code</a></li>
 <li> <a href="https://codeberg.org/brohrer/myrtle/src/branch/main/src/myrtle/worlds/pendulum.py">Myrtle pendulum world code</a></li>
 <li> <a href="https://github.com/brohrer/pacemaker">Pacemaker code</a></li>
 <li> <a href="https://codeberg.org/brohrer/pendulum-examples">Pendulum examples code</a></li>
 <li> <a href="https://codeberg.org/brohrer/ziptie">Ziptie code</a></li>
-<li> <a href="https://www.brandonrohrer.com/ziptie">Ziptie paper</a></li>
+<li> <a href="ziptie">Ziptie paper</a></li>
 </ul>
 
         <script src="javascripts/blog_signature.js"></script>

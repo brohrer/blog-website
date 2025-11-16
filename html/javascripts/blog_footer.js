@@ -4,7 +4,7 @@ document.write('\
       <footer class="inner">\
         <section class="clearfix">\
           <p>\
-            <a href="https://brandonrohrer.com/blog.html">\
+            <a href="blog.html">\
             Browse the blog </a>\
           </p>\
           <p>\
