@@ -2,7 +2,7 @@
 <html>
 
   <script type="text/javascript">var blog_title = "Automating traffic control";</script>
-  <script type="text/javascript">var publication_date = "November 11, 2025";</script>
+  <script type="text/javascript">var publication_date = "November 17, 2025";</script>
   <head>
     <link rel="icon" href="images/ml_logo.png">
     <meta charset='utf-8'>
@@ -253,7 +253,7 @@ For the cron jobs of the not-special user <code>brohrer</code>:
 
 <p>
 <pre>
-\<em>/5 \</em> \<em> \</em> \*
+&#42;/5 &#42; &#42; &#42; &#42;
 /home/brohrer/.local/bin/uv run
 --project /home/brohrer/webserver-toolbox/
 /home/brohrer/webserver-toolbox/autoblock.py >>
@@ -276,7 +276,7 @@ And for root's cron jobs:
 
 <p>
 <pre>
-3-59/5 \<em> \</em> \<em> \</em>
+3-59/5 &#42; &#42; &#42; &#42;
 sh /home/brohrer/webserver-toolbox/update_firewall.sh >>
 /home/brohrer/webserver-toolbox/logs/cron.su.log 2>&1
 </pre>

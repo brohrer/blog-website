@@ -175,7 +175,7 @@ to cron jobs.
 For the cron jobs of the not-special user `brohrer`: 
 
 ```
-\*/5 \* \* \* \*
+$*$/5 $*$ $*$ $*$ $*$
 /home/brohrer/.local/bin/uv run
 --project /home/brohrer/webserver-toolbox/
 /home/brohrer/webserver-toolbox/autoblock.py >>
@@ -192,7 +192,7 @@ to the file `cron.log`.
 And for root's cron jobs:
 
 ```
-3-59/5 \* \* \* \*
+3-59/5 $*$ $*$ $*$ $*$
 sh /home/brohrer/webserver-toolbox/update_firewall.sh >>
 /home/brohrer/webserver-toolbox/logs/cron.su.log 2>&1
 ```
