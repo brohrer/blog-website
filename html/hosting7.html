@@ -1,68 +1,107 @@
-# Bomb-proof your website with mirroring
+<!DOCTYPE html>
+<html>
 
+  <script type="text/javascript">var blog_title = "Bomb-proof your website with mirroring";</script>
+  <script type="text/javascript">var publication_date = "November 26, 2025";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
 In previous posts, we’ve done our best to set up a website that is resilient
 to traffic, spikes, bots, and mischief of all sorts. (
-[I](hosting.html),
-[II](hosting2.html),
-[III](hosting3.html),
-[IV](hosting4.html),
-[V](hosting5.html)
-[VI](hosting6.html)
-[VII](hosting7.html)
+<a href="hosting.html">I</a>,
+<a href="hosting2.html">II</a>,
+<a href="hosting3.html">III</a>,
+<a href="hosting4.html">IV</a>,
+<a href="hosting5.html">V</a>
+<a href="hosting6.html">VI</a>
+<a href="hosting7.html">VII</a>
 )
 But there are still plenty of other things that can go wrong.
 A good way to protect against this is mirroring.
+</p>
 
-A mirror is like a backup website---not just a backup with the data
+<p>
+A mirror is like a backup website&mdash;not just a backup with the data
 but of everything, including the server and domain name.
+</p>
 
-
-I built two additional mirrors for my blog website `brandonrohrer.com`.
+<p>
+I built two additional mirrors for my blog website <code>brandonrohrer.com</code>.
 The symmetry of
-[triple mode redundancy](https://en.wikipedia.org/wiki/Triple_modular_redundancy)
+<a href="https://en.wikipedia.org/wiki/Triple_modular_redundancy">triple mode redundancy</a>
 appeals to me, especially after hearing that it’s
-[a principal used by NASA](https://llis.nasa.gov/lesson/18803)
+<a href="https://llis.nasa.gov/lesson/18803">a principal used by NASA</a>
 and growing up on
-[some triples-themed sci-fi](https://en.wikipedia.org/wiki/Rendezvous_with_Rama).
+<a href="https://en.wikipedia.org/wiki/Rendezvous_with_Rama">some triples-themed sci-fi</a>.
 You can take down one, but you still have two backups to work with,
 plenty of breathing room. If you get really unlucky,
 two will go down leaving you with a third.
 Why build one when you can build three at three times the cost?
+</p>
 
+<p>
 I tried to build in as much redundancy as possible.
 I got three domain names, each from a different domain name registrar.
+</p>
 
-- [brandonrohrer.com](https://brandonrohrer.com)
-from [Namecheap](https://www.namecheap.com), based in Phoenix.
-- [brandonrohrer.org](https://brandonrohrer.org)
-from [Hover](https://www.hover.com), based in Toronto.
-- [brandonrohrer.at](https://brandonrohrer.at) from
-[Hostpoint](https://www.hostpoint.ch/en/domains/domains.html), based outside Zurich.
+<ul>
+<li> <a href="https://brandonrohrer.com">brandonrohrer.com</a>
+from <a href="https://www.namecheap.com">Namecheap</a>, based in Phoenix.</li>
+<li> <a href="https://brandonrohrer.org">brandonrohrer.org</a>
+from <a href="https://www.hover.com">Hover</a>, based in Toronto.</li>
+<li> <a href="https://brandonrohrer.at">brandonrohrer.at</a> from
+<a href="https://www.hostpoint.ch/en/domains/domains.html">Hostpoint</a>, based outside Zurich.</li>
+</ul>
 
+<p>
 These are running on three different virtual private servers (VPSs).
+</p>
 
-- A VPS located in New York from [DigitalOcean](https://www.digitalocean.com),
-which is headquartered near Denver.
-- A VPS located in Prague from [OVHCloud](https://www.ovhcloud.com/en/),
-which is headquartered in France on the border with Belgium.
-- A VPS located in Montreal, from [Koumbit](https://www.koumbit.org/en),
-which is also headquartered in Montreal.
+<ul>
+<li> A VPS located in New York from <a href="https://www.digitalocean.com">DigitalOcean</a>,
+which is headquartered near Denver.</li>
+<li> A VPS located in Prague from <a href="https://www.ovhcloud.com/en/">OVHCloud</a>,
+which is headquartered in France on the border with Belgium.</li>
+<li> A VPS located in Montreal, from <a href="https://www.koumbit.org/en">Koumbit</a>,
+which is also headquartered in Montreal.</li>
+</ul>
 
+<p>
 They all contain the same content, which lives in a repository called
-`blog-website`. For additional redundancy, I host this repo on three
+<code>blog-website</code>. For additional redundancy, I host this repo on three
 different git services.
+</p>
 
-- [GitHub](https://github.com), a Microsoft property.
-- [GitLab](https://gitlab.com), operated out of Utrecht.
-- [Codeberg](https://codeberg.org), a non-profit in Berlin.
+<ul>
+<li> <a href="https://github.com">GitHub</a>, a Microsoft property.</li>
+<li> <a href="https://gitlab.com">GitLab</a>, operated out of Utrecht.</li>
+<li> <a href="https://codeberg.org">Codeberg</a>, a non-profit in Berlin.</li>
+</ul>
 
+<p>
 One benefit from having three mirrors is that I can treat one as a
 staging environment. If I want to make a risky change, such as automatically
 generating new firewall rules to block annoying traffic, I can do it on
 my least traveled mirror and see how it goes. If something goes horribly
 wrong and takes down that entire server, then I can put it back together
 from scratch, all while the other two mirrors stay operational.
+</p>
 
+<p>
 Manually updating three mirrors is a little tedious. It’s easy to see
 why websites with mirrors or other content distribution networks would
 automate this. However, several of the larger corporate outages we’ve seen
@@ -72,7 +111,9 @@ misconfiguration can take down all of them. They aren't isolated from
 each other. I’m not running a business that needs instant updates, so
 I can afford to roll mine out slowly, by hand, and take that extra time
 and get that extra resilience.
+</p>
 
+<p>
 There are two parts of my system that are single points of failure.
 The first is my content hosting service. All of the images and videos
 associated with my blog are hosted in a separate repository on GitHub.
@@ -83,17 +124,29 @@ some fragility. If for some reason my GitHub account should be compromised,
 I would have to find another content hosting service. (I of course have
 multiple backups of all the files there and could rebuild.) But for my purposes,
 it’s good enough for now.
+</p>
 
+<p>
 The other single point of failure is me. If I were running a serious
 operation, there would be at least three administrators with full admin
 permissions on everything so that if one or two of us were incapacitated,
 the third could still carry on. In this particular instance, I’m not worried.
 If I’m in a position where I’m not capable of taking care of the blog,
 then likely the last thing I'll be worried about is the health of the blog.
+</p>
 
+<p>
 Spreading services across companies and across continents is a good
 way to prevent a single event from taking down your site. It's not a good
 feeling to be dependent on a single corporation or even national government
 for your internet real estate. If AWS us-east-1 goes down and takes your site
 with it, that's a sad day. It's nice to know that your little piece of
 the web will stay standing through anything short of a global calamity.
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

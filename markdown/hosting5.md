@@ -85,6 +85,14 @@ script that just repeats the access logs directly, but in a stripped down format
 ![Sample output from history.py
 ](https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/hosting/history_outputs.png "Time, HTTP status, IP address, and page name")
 
+If you haven't already done so, I recommend installing `uv`
+
+```
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+It's an incredible tool for managing Python packages, versions, and environments.
+
 ## Browsing the logs
 
 At first glance these logs are just an unbroken wall of text, but after
