@@ -4,6 +4,284 @@
 <link>https://www.brandonrohrer.com</link>
 <description>Brandon Rohrer's blog</description>
 
+
+  <item>
+    <title>
+    Moving your code from prototype to production
+    </title>
+    <link>
+    https://brandonrohrer.com/hosting8.html
+    </link>
+    <pubDate>
+    Fri, 12 Dec 2025 06:34:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.com/hosting8.html
+    </guid>
+    <description><![CDATA[
+
+<p>
+So you wrote a cool little weather app that predicts temperatures
+in your neighborhood.
+Now you want to be able to share those predictions with everyone of
+the thousand people who live there. How do you go from
+"It works on my machine" to "No matter where you are in the world you can
+use this in your own browser."?
+</p>
+
+<p>
+There are a lot of dimensions to making your code ready to leave the nest
+and be on its own in the real world, but an important one is
+deploying it from your laptop to a globally available server.
+</p>
+
+<p>
+This post is about one good way to do this. There are lots of others,
+but this one is solid and, believe it or not, one of the simplest.
+This deployment starter kit includes
+</p>
+
+<ul>
+<li> <a href="https://flask.palletsprojects.com/en/stable/">Flask</a>, a Python package for turning your code into an app.</li>
+<li> <a href="https://gunicorn.org">Gunicorn</a>, a more serious production grade WSGI server.</li>
+<li> <a href="https://nginx.org/en/">nginx</a>, an industry standard web server.</li>
+<li> <a href="https://wiki.ubuntu.com/UncomplicatedFirewall">ufw</a>, an Uncomplicated Firewall for Linux</li>
+<li> <a href="https://systemd.io">systemd</a> the Linux tool for turning your code into a daemon.</li>
+</ul>
+
+<p>
+I won’t bother walking through How to do this because DigitalOcean has
+<a href="https://flask.palletsprojects.com/en/stable/deploying/gunicorn/">an amazing documentation page</a>
+for setting this up in Ubuntu 22.04. It worked for me on 24.04 as well.
+Follow their page to the letter and it will get you safely through.
+And it is such a cool feeling when it does.
+</p>
+
+<p>
+However, I feel like it is worth spending a couple minutes on the Why.
+Why do any of this? Why not just share your code from your personal computer?
+You could if you wanted to. But it turns out that
+the Internet is an extremely busy and occasionally harsh place to be.
+Prototyping on your laptop is like setting up a lemonade stand in a private garden
+and selling cups to your mom. Opening your service up to the Internet
+unfiltered is moving your card table lemonade stand to an active combat zone.
+</p>
+
+<p>
+Luckily, there are really helpful tools for handling this.
+</p>
+
+<p>
+<strong>Flask</strong> is the first layer of order we add.
+It takes willy-nilly functions and makes sure they fit the structure of an API.
+They turn your Python into a web app.
+Flask takes your lemonade stand, and puts four walls, a ceiling, and
+a well defined front door on it.
+</p>
+
+<p>
+<strong>Gunicorn</strong> (short for Green Unicorn) is an open source WSGI server written
+in Python. WSGI is short fo
+<a href="https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface">web server gateway interface</a>,
+and happily can be pronounced "whiskey". It serves as a bridge between a web app
+and a web server. Gunicorn handles scalability and adds some security.
+Gunicorn beefs up the walls of your lemonade stand and adds a headset-wearing
+coordinator that lines up all the customers and makes sure they keep
+moving, get their lemonade efficiently, and get out. It also builds
+carbon-copies of your lemonade stands next to the original and forms a queue
+of customers in front of each one. Gunicorn gets you ready to handle
+the throes of people that want to come visit your stand.
+</p>
+
+<p>
+<strong>nginx</strong> is a fully featured HTTP server. It often gets used on its own
+to serve webpages, but it can also route API requests. In our setup,
+we are going to use it as a
+<a href="https://en.wikipedia.org/wiki/Reverse_proxy">reverse proxy</a>,
+an extra front door and lobby with a security guard and a metal detector
+that people have to get through before they can line up for lemonade.
+nginx turns away lot of troublemakers who might be trying to sneak in
+and take our lemons or trick our customers out of their cash.
+nginx helps make sure that the people who show up are there to buy lemonade.
+</p>
+
+<p>
+<strong>ufw</strong> provides additional security. It has one job, which is to check
+people’s ID and destination (IP address and port).
+You can feed it a list of known bad actors' IPs to block them preemptively.
+ufw is a ridiculously high compound wall that surrounds your lemonade complex,
+providing a comfortable layer of protection from anyone seeking
+to do violence or so mayhem.
+</p>
+
+<p>
+<strong>systemd</strong> lets us run Gunicorn as a daemon, a background process that
+is automatically started when you turn the computer on and restarted
+when necessary. Once you set up Gunicorn as a daemon, you don’t have
+to worry about whether your lemonade vendors fell asleep, or decided
+to go home. Nope, with systemd the lemonade emporium is up and running 24/7.
+</p>
+
+<p>
+When you consider all of the things that could go wrong with a service
+exposed to the Internet, it’s kind of amazing that we can get it to work at all,
+which makes this setup extremely cool. Granted, it has more moving pieces
+than I would prefer, but they all serve a purpose. Importantly,
+the instructions for setting them up are well defined. There are other,
+fancier ways to do all of these steps, and ways to handle yet more security
+and yet larger scale, but this Flask/Gunicorn/nginx set up is something
+you can put out into the world without apology.
+It’s a fully-baked grown-up solution.
+</p>
+
+
+    ]]></description>
+
+  </item>
+  <item>
+    <title>
+    Bomb-proof your website with mirroring
+    </title>
+    <link>
+    https://brandonrohrer.com/hosting7.html
+    </link>
+    <pubDate>
+    Sat, 29 Nov 2025 08:36:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.com/hosting7.html
+    </guid>
+    <description><![CDATA[
+
+<p>
+In previous posts, we’ve done our best to set up a website that is resilient
+to traffic, spikes, bots, and mischief of all sorts. (
+<a href="hosting.html">I</a>,
+<a href="hosting2.html">II</a>,
+<a href="hosting3.html">III</a>,
+<a href="hosting4.html">IV</a>,
+<a href="hosting5.html">V</a>
+<a href="hosting6.html">VI</a>
+<a href="hosting7.html">VII</a>
+)
+But there are still plenty of other things that can go wrong.
+A good way to protect against this is mirroring.
+</p>
+
+<p>
+A mirror is like a backup website&mdash;not just a backup with the data
+but of everything, including the server and domain name.
+</p>
+
+<p>
+I built two additional mirrors for my blog website <code>brandonrohrer.com</code>.
+The symmetry of
+<a href="https://en.wikipedia.org/wiki/Triple_modular_redundancy">triple mode redundancy</a>
+appeals to me, especially after hearing that it’s
+<a href="https://llis.nasa.gov/lesson/18803">a principal used by NASA</a>
+and growing up on
+<a href="https://en.wikipedia.org/wiki/Rendezvous_with_Rama">some triples-themed sci-fi</a>.
+You can take down one, but you still have two backups to work with,
+plenty of breathing room. If you get really unlucky,
+two will go down leaving you with a third.
+Why build one when you can build three at three times the cost?
+</p>
+
+<p>
+I tried to build in as much redundancy as possible.
+I got three domain names, each from a different domain name registrar.
+</p>
+
+<ul>
+<li> <a href="https://brandonrohrer.com">brandonrohrer.com</a>
+from <a href="https://www.namecheap.com">Namecheap</a>, based in Phoenix.</li>
+<li> <a href="https://brandonrohrer.org">brandonrohrer.org</a>
+from <a href="https://www.hover.com">Hover</a>, based in Toronto.</li>
+<li> <a href="https://brandonrohrer.at">brandonrohrer.at</a> from
+<a href="https://www.hostpoint.ch/en/domains/domains.html">Hostpoint</a>, based outside Zurich.</li>
+</ul>
+
+<p>
+These are running on three different virtual private servers (VPSs).
+</p>
+
+<ul>
+<li> A VPS located in New York from <a href="https://www.digitalocean.com">DigitalOcean</a>,
+which is headquartered near Denver.</li>
+<li> A VPS located in Prague from <a href="https://www.ovhcloud.com/en/">OVHCloud</a>,
+which is headquartered in France on the border with Belgium.</li>
+<li> A VPS located in Montreal, from <a href="https://www.koumbit.org/en">Koumbit</a>,
+which is also headquartered in Montreal.</li>
+</ul>
+
+<p>
+They all contain the same content, which lives in a repository called
+<code>blog-website</code>. For additional redundancy, I host this repo on three
+different git services.
+</p>
+
+<ul>
+<li> <a href="https://github.com">GitHub</a>, a Microsoft property.</li>
+<li> <a href="https://gitlab.com">GitLab</a>, operated out of Utrecht.</li>
+<li> <a href="https://codeberg.org">Codeberg</a>, a non-profit in Berlin.</li>
+</ul>
+
+<p>
+One benefit from having three mirrors is that I can treat one as a
+staging environment. If I want to make a risky change, such as automatically
+generating new firewall rules to block annoying traffic, I can do it on
+my least traveled mirror and see how it goes. If something goes horribly
+wrong and takes down that entire server, then I can put it back together
+from scratch, all while the other two mirrors stay operational.
+</p>
+
+<p>
+Manually updating three mirrors is a little tedious. It’s easy to see
+why websites with mirrors or other content distribution networks would
+automate this. However, several of the larger corporate outages we’ve seen
+recently are precisely because of these automated deployment mechanisms.
+Because there’s one system that impacts every website, a single
+misconfiguration can take down all of them. They aren't isolated from
+each other. I’m not running a business that needs instant updates, so
+I can afford to roll mine out slowly, by hand, and take that extra time
+and get that extra resilience.
+</p>
+
+<p>
+There are two parts of my system that are single points of failure.
+The first is my content hosting service. All of the images and videos
+associated with my blog are hosted in a separate repository on GitHub.
+This keeps the bandwidth to my VPSs low and keeps my load times very snappy,
+minus the images. Then I let GitHub pay the bandwidth costs for the larger
+files and take advantage of its global network. This comes at the cost of
+some fragility. If for some reason my GitHub account should be compromised,
+I would have to find another content hosting service. (I of course have
+multiple backups of all the files there and could rebuild.) But for my purposes,
+it’s good enough for now.
+</p>
+
+<p>
+The other single point of failure is me. If I were running a serious
+operation, there would be at least three administrators with full admin
+permissions on everything so that if one or two of us were incapacitated,
+the third could still carry on. In this particular instance, I’m not worried.
+If I’m in a position where I’m not capable of taking care of the blog,
+then likely the last thing I'll be worried about is the health of the blog.
+</p>
+
+<p>
+Spreading services across companies and across continents is a good
+way to prevent a single event from taking down your site. It's not a good
+feeling to be dependent on a single corporation or even national government
+for your internet real estate. If AWS us-east-1 goes down and takes your site
+with it, that's a sad day. It's nice to know that your little piece of
+the web will stay standing through anything short of a global calamity.
+</p>
+
+    ]]></description>
+
+  </item>
+
   <item>
     <title>
     Automating traffic control
