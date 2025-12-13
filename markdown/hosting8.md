@@ -22,7 +22,7 @@ This deployment starter kit includes
 - [systemd](https://systemd.io) the Linux tool for turning your code into a daemon.
 
 I won’t bother walking through How to do this because DigitalOcean has
-[an amazing documentation page](https://flask.palletsprojects.com/en/stable/deploying/gunicorn/)
+[an amazing documentation page](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-20-04)
 for setting this up in Ubuntu 22.04. It worked for me on 24.04 as well.
 Follow their page to the letter and it will get you safely through.
 And it is such a cool feeling when it does.
@@ -44,7 +44,7 @@ Flask takes your lemonade stand, and puts four walls, a ceiling, and
 a well defined front door on it.
 
 **Gunicorn** (short for Green Unicorn) is an open source WSGI server written
-in Python. WSGI is short fo
+in Python. WSGI is short for
 [web server gateway interface](https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface),
 and happily can be pronounced "whiskey". It serves as a bridge between a web app
 and a web server. Gunicorn handles scalability and adds some security.
