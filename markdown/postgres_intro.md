@@ -68,11 +68,13 @@ allows it to really scream.
 The example above is pretty dense, especially if you’ve never worked
 with databases before. Here’s a walk-through.
 
+<br>
 ```
 import psycopg
 ```
 Heads up: the import name of the package is `psycopg`, not `psycopg3` or `psychopg`.
 
+<br>
 ```
 with psycopg.connect(dbname="postgres", user="postgres") as conn:
 ```
@@ -93,6 +95,7 @@ a default user with default permissions.
 
 Once the connection is established, return it as `conn`.
 
+<br>
 ```
     with conn.cursor() as cursor:
 ```
@@ -101,6 +104,7 @@ A cursor will let you create tables, add data, and run queries.
 There's more about cursors in this
 [intro to databases post](db_awkwardness.html).
 
+<br>
 ```
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS
@@ -119,6 +123,7 @@ Give the table three columns.
 expects a date. There are a lot of allowable
 [Postgres date formats](https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-INPUT-DATES). 
 
+<br>
 ```
         cursor.execute("""
             INSERT INTO pets (name, weight_kg, birthday)
@@ -149,17 +154,21 @@ Don't do this! It opens you up to SQL injection attacks. If someone
 names their Pomeranian `Fluffy'); DROP TABLE pets;--`
 then badness will happen [ [xkcd 327](https://xkcd.com/327) ].
 
+<br>
 ```
         cursor.execute("SELECT * FROM pets")
         print(cursor.fetchone())
 ```
 Run a query, selecting all the rows from your one-row table.
 
+<br>
 ```
         conn.commit()
 ```
 Until you commit it everything you've done is temporary. `commit()`
 makes it permanent.
+
+-----
 
 That's a foothold in the Postgres world. From there, your imagination is the only limit.
 If you want to brush up on (or start learning) SQL,

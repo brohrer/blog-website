@@ -118,6 +118,7 @@ with databases before. Here’s a walk-through.
 </p>
 
 <p>
+<br>
 <pre>
 import psycopg
 </pre>
@@ -125,6 +126,7 @@ Heads up: the import name of the package is <code>psycopg</code>, not <code>psyc
 </p>
 
 <p>
+<br>
 <pre>
 with psycopg.connect(dbname="postgres", user="postgres") as conn:
 </pre>
@@ -153,6 +155,7 @@ Once the connection is established, return it as <code>conn</code>.
 </p>
 
 <p>
+<br>
 <pre>
     with conn.cursor() as cursor:
 </pre>
@@ -163,6 +166,7 @@ There's more about cursors in this
 </p>
 
 <p>
+<br>
 <pre>
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS
@@ -187,6 +191,7 @@ expects a date. There are a lot of allowable
 </ul>
 
 <p>
+<br>
 <pre>
         cursor.execute("""
             INSERT INTO pets (name, weight_kg, birthday)
@@ -225,6 +230,7 @@ then badness will happen [ <a href="https://xkcd.com/327">xkcd 327</a> ].
 </p>
 
 <p>
+<br>
 <pre>
         cursor.execute("SELECT * FROM pets")
         print(cursor.fetchone())
@@ -233,11 +239,16 @@ Run a query, selecting all the rows from your one-row table.
 </p>
 
 <p>
+<br>
 <pre>
         conn.commit()
 </pre>
 Until you commit it everything you've done is temporary. <code>commit()</code>
 makes it permanent.
+</p>
+
+<p>
+<hr>
 </p>
 
 <p>

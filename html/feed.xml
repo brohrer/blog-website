@@ -5,6 +5,273 @@
 <description>Brandon Rohrer's blog</description>
 
 
+
+  </item>
+  <item>
+    <title>
+    Use Postgres with Python
+    </title>
+    <link>
+    https://brandonrohrer.com/postgres_intro.html
+    </link>
+    <pubDate>
+    Tue, 23 Dec 2025 08:36:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.com/postgres_intro.html
+    </guid>
+    <description><![CDATA[
+
+<p>
+I’ve been intimidated by Postgres for a long time, but now that
+I’ve gone and got it working I feel kind of silly.
+It is a wildly powerful tool, so I expected to have a painful installation
+with building from source and modifying environment variables, 
+but it turns out Postgres is built to be put to use quickly.
+</p>
+
+<p>
+On Linux, installation is literally one line. Here’s what it looks like on
+Ubuntu 24.04, and <a href="https://www.postgresql.org/download/linux/">other distros</a>
+are similar.
+</p>
+
+<p>
+<pre>
+sudo apt-get install postgresql
+</pre>
+</p>
+
+<p>
+For MacOS I installed <a href="https://postgresapp.com/downloads.html">Postgres.app</a>.
+After a download and a double click, your Postgres server is up and running.
+</p>
+
+<p>
+Sorry Windows, I haven't tried you yet, but
+<a href="https://www.postgresql.org/download/windows/">here's where I'd start</a>.
+</p>
+
+<p>
+For working with Postgres from Python, the
+<a href="https://www.psycopg.org/psycopg3/docs/basic/index.html">psycopg package</a>
+is the ticket.
+</p>
+
+<p>
+Install with uv
+</p>
+
+<p>
+<pre>
+uv add "psycopg[binary]"
+</pre>
+</p>
+
+<p>
+or pip.
+</p>
+
+<p>
+<pre>
+pip install "psycopg[binary]"
+</pre>
+</p>
+
+<p>
+Then the Python interface looks like this.
+</p>
+
+<p>
+<pre>
+import psycopg <br>
+with psycopg.connect(dbname="postgres", user="postgres") as conn:
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS
+            pets ( name TEXT, weight_kg REAL, birthday DATE);
+        """) <br>
+        cursor.execute("""
+            INSERT INTO pets (name, weight_kg, birthday)
+            VALUES (%s, %s, %s)
+        """, ('Mugsy', 24.3, '2022-10-18'))<br>
+        cursor.execute("SELECT * FROM pets")
+        print(cursor.fetchone()) <br>
+        conn.commit()
+</pre>
+</p>
+
+<p>
+It's very much like
+<a href="https://brandonrohrer.com/db_first_db.html">working with <code>sqlite3</code></a>,
+but with a few small differences.
+</p>
+
+<p>
+It’s helpful to be aware of the fact that the Postgres server is its
+own process. It’s a separate program that you have to call from Python.
+The fact that it’s not tied to the Python interpreter and can run
+its own optimized code, purpose built for your operating system,
+allows it to really scream.
+</p>
+
+<p>
+The example above is pretty dense, especially if you’ve never worked
+with databases before. Here’s a walk-through.
+</p>
+
+<p>
+<br>
+<pre>
+import psycopg
+</pre>
+Heads up: the import name of the package is <code>psycopg</code>, not <code>psycopg3</code> or <code>psychopg</code>.
+</p>
+
+<p>
+<br>
+<pre>
+with psycopg.connect(dbname="postgres", user="postgres") as conn:
+</pre>
+The <code>with</code> construction is a Python context manager, a shorthand for saying
+"do some stuff with this database connection and, whether it finishes
+successfully or crashes and burns, make sure to gracefully excuse yourself
+to the server when you're done and close everything down
+with as little damage as possible."
+</p>
+
+<p>
+The <code>dbname="postgres"</code> is an instruction to connect to the <code>postgres</code>
+database, one that exists by default on all Postgres servers.
+A database is a collection of tables, the same way a spreadsheet
+"workbook" is a collection of individual sheets. Initially
+the <code>postgres</code> database will be empty, containing no tables.
+</p>
+
+<p>
+The <code>user="postgres"</code> says to connect as the user named <code>postgres</code>,
+a default user with default permissions.
+</p>
+
+<p>
+Once the connection is established, return it as <code>conn</code>.
+</p>
+
+<p>
+<br>
+<pre>
+    with conn.cursor() as cursor:
+</pre>
+A connection to a database isn't enough. You also need a cursor.
+A cursor will let you create tables, add data, and run queries.
+There's more about cursors in this
+<a href="db_awkwardness.html">intro to databases post</a>.
+</p>
+
+<p>
+<br>
+<pre>
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS
+            pets ( name TEXT, weight_kg REAL, birthday DATE);
+        """)
+</pre>
+Make a new table called <code>pets</code>. If one already exists (for example, if you
+run this script more than once) then don't worry about it.
+</p>
+
+<p>
+Give the table three columns.
+</p>
+
+<ul>
+<li> The first is called <code>name</code> and expects text data.</li>
+<li> The second is called <code>weight_kg</code> and expects real valued
+(floating point numerical) data.</li>
+<li> The third is called <code>birthday</code> and
+expects a date. There are a lot of allowable
+<a href="https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-INPUT-DATES">Postgres date formats</a>. </li>
+</ul>
+
+<p>
+<br>
+<pre>
+        cursor.execute("""
+            INSERT INTO pets (name, weight_kg, birthday)
+            VALUES (%s, %s, %s)
+        """, ('Mugsy', 24.3, '2022-10-18'))
+</pre>
+Add a row to this table.
+</p>
+
+<ul>
+<li> Put <code>Mugsy</code> in the <code>name</code> column.</li>
+<li> Put <code>24.3</code> in the <code>weight_kg</code> column.</li>
+<li> Put October 18, 2022 in the <code>birthday</code> column.</li>
+</ul>
+
+<p>
+This format with the <code>%s</code> placeholders is important. This lets Postgres
+perform input validation&mdash;to check whether any of the input values
+will break things. If you are familiar with Python string construction
+it would be tempting to substitute the values directly in with an f-string.
+</p>
+
+<p>
+<pre>
+pet_name = 'Mugsy'
+pet_weight = 24.3
+pet_birthday = '2022-10-18'
+f"""
+    INSERT INTO pets (name, weight_kg, birthday)
+    VALUES ({pet_name}, {pet_weight}, {pet_birthday})
+"""
+</pre>
+Don't do this! It opens you up to SQL injection attacks. If someone
+names their Pomeranian <code>Fluffy'); DROP TABLE pets;--</code>
+then badness will happen [ <a href="https://xkcd.com/327">xkcd 327</a> ].
+</p>
+
+<p>
+<br>
+<pre>
+        cursor.execute("SELECT * FROM pets")
+        print(cursor.fetchone())
+</pre>
+Run a query, selecting all the rows from your one-row table.
+</p>
+
+<p>
+<br>
+<pre>
+        conn.commit()
+</pre>
+Until you commit it everything you've done is temporary. <code>commit()</code>
+makes it permanent.
+</p>
+
+<p>
+<hr>
+</p>
+
+<p>
+That's a foothold in the Postgres world. From there, your imagination is the only limit.
+If you want to brush up on (or start learning) SQL,
+<a href="sql_resources.html">here are some community-recommended resources</a>.
+I also recommend bookmarking the
+<a href="https://www.postgresql.org/docs/18/index.html">PostgreSQL documentation</a>.
+It is exhaustive.
+</p>
+
+<p>
+The really cool thing about <a href="https://en.wikipedia.org/wiki/PostgreSQL">Postgres</a>
+(formally known as PostgreSQL)
+is that it is a full-blown,
+production ready, run-with-the-big-dogs database. Just ask
+<a href="https://en.wikipedia.org/wiki/PostgreSQL#Notable_users">Reddit, Instagram, and OpenAI</a>.
+</p>
+    ]]></description>
+
   <item>
     <title>
     Moving your code from prototype to production
