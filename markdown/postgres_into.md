@@ -161,8 +161,15 @@ Run a query, selecting all the rows from your one-row table.
 Until you commit it everything you've done is temporary. `commit()`
 makes it permanent.
 
-
-I recommend bookmarking the
+That's a foothold in the Postgres world. From there, your imagination is the only limit.
+If you want to brush up on (or start learning) SQL,
+[here are some community-recommended resources](sql_resources.html).
+I also recommend bookmarking the
 [PostgreSQL documentation](https://www.postgresql.org/docs/18/index.html).
 It is exhaustive.
 
+The really cool thing about [Postgres](https://en.wikipedia.org/wiki/PostgreSQL)
+(formally known as PostgreSQL)
+is that it is a full-blown,
+production ready, run-with-the-big-dogs database. Just ask
+[Reddit, Instagram, and OpenAI](https://en.wikipedia.org/wiki/PostgreSQL#Notable_users).
