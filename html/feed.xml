@@ -4,9 +4,6 @@
 <link>https://www.brandonrohrer.com</link>
 <description>Brandon Rohrer's blog</description>
 
-
-
-  </item>
   <item>
     <title>
     Use Postgres with Python
@@ -271,6 +268,7 @@ production ready, run-with-the-big-dogs database. Just ask
 <a href="https://en.wikipedia.org/wiki/PostgreSQL#Notable_users">Reddit, Instagram, and OpenAI</a>.
 </p>
     ]]></description>
+  </item>
 
   <item>
     <title>
