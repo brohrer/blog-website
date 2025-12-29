@@ -6,6 +6,40 @@
 
   <item>
     <title>
+    An addition app
+    </title>
+    <link>
+    https://graffitiwall.nexus//graffiti_adder.html
+    </link>
+    <pubDate>
+    Sun, 28 Dec 2025 08:36:00 EDT
+    </pubDate>
+    <guid>
+    https://graffitiwall.nexus//graffiti_adder.html
+    </guid>
+    <description><![CDATA[
+<p>
+I made a little
+<a href="https://graffitiwall.nexus/graffiti_adder.html">
+Addition App</a> (
+<a href="https://codeberg.org/brohrer/graffitiwall.nexus">
+  frontend code</a>,
+<a href="https://codeberg.org/brohrer/graffitiwall-server">
+  backend code</a>)
+to stitch together everything I've been learning about
+self-hosting, deploying a WSGI server, and backing it with a
+Postgres database.
+</p>
+<p>
+Please enjoy it!
+</p>
+
+    ]]></description>
+  </item>
+
+
+  <item>
+    <title>
     Use Postgres with Python
     </title>
     <link>
