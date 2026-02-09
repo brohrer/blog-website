@@ -6,6 +6,46 @@
 
   <item>
     <title>
+    Graffiti Wall: A commons drawing app
+    </title>
+    <link>
+    https://graffitiwall.nexus/graffiti_wall.html
+    </link>
+    <pubDate>
+    Mon, 09 Feb 2026 08:36:00 EDT
+    </pubDate>
+    <guid>
+    https://graffitiwall.nexus/graffiti_wall.html
+    </guid>
+    <description><![CDATA[
+<p>
+I made public space where anyone and everyone can go and scribble anonymously.
+Probably a mistake, but it taught me a lot.
+</p>
+<p>
+<a href="https://graffitiwall.nexus/graffiti_wall.html">
+Graffiti Wall</a> (
+<a href="https://codeberg.org/brohrer/graffitiwall.nexus">
+  frontend code</a>,
+<a href="https://codeberg.org/brohrer/graffitiwall-server">
+  backend code</a>)
+</p>
+<p>
+It's the latest step on my journey, stitching together everything
+I've been learning about
+self-hosting, deploying a WSGI server, and backing it with a
+Postgres database.
+</p>
+<p>
+Please enjoy it!
+</p>
+
+    ]]></description>
+  </item>
+
+
+  <item>
+    <title>
     An addition app
     </title>
     <link>
