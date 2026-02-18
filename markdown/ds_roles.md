@@ -5,6 +5,17 @@ It was so new that most companies had no idea what a data scientist should
 be doing, only that they desperately needed one or they would be left behind.
 Sound familiar?
 
+I've tried to survey the job description of data science a couple of times with
+varying degrees of success, most recently
+to go with 
+[some informal recommendations](https://github.com/brohrer/academic_advisory)
+for creating data science degree programs.
+Together with a group of colleages we tried to summarize
+[what data scientists do](https://github.com/brohrer/academic_advisory/blob/main/what_DS_do.md)
+and [the data science subtypes of maker, oracle, detective, generalist](https://brandonrohrer.com/data_science_archetypes.html).
+But in the face of changing expectations this doesn't feel like enough
+anymore. It's time for a refresh.
+
 ## A brief and biased history of the Data Scientist role
 
 ### In the beginning...
@@ -117,7 +128,8 @@ you can't know whether a particular answer is in the 30% until you
 dive in and re-create the analysis yourself.
 
 There is a school of thought that being confident and fast is better than
-being cautious and correct. It has bled over from strategic leadership (where
+being cautious and correct. 
+It has bled over from strategic leadership (where
 ambiguity is ubiquitous and one of the greatest risks is indecision)
 to analysis and engineering (where incaution can lead to loss of limb,
 life, or money). And in most large organizations, individual stakeholders
@@ -125,5 +137,18 @@ don't often get to feel the effects of being wrong. Those usually take time to
 materialize. So they can prioritize being fast and confident, which
 their AI analytics queries are all to happy to help them out with.
 
+## When stakeholders undervalue to skill and underestimate the time required
 
+A closely related trend is a common assumption that data analysis has
+somehow gotten easier and faster. 
+Randy Au calls this ["data work in the fast fashion code era"](https://www.counting-stuff.com/data-work-in-the-fast-fashion-code-era/).
+It's no big deal to extract nuanced insights from your collected data,
+just feed it in to NotebookLM and ask, right? You should be able to have
+something by this afternoon right? Not the full analysis of course, but
+"rough numbers". Right?
+
+I can't even come up with a rough number of the times I've had the conversation
+that "rough numbers" are very rough indeed. Not just off by a few percent,
+but maybe in the completely wrong direction. And there's no way to know for
+sure until you go back and do the careful numbers.
 
