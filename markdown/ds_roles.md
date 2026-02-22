@@ -74,25 +74,61 @@ and the discipline has existed by other names
 for a very long time. After all,
 people have been answering questions using data for thousands of years.
 
-## Answering questions with data
+## What is "data science"?
 
-### Decision support: Which choice should I make?
+I like to define data science as "answering questions using data". 
+Also note that I am referring to lowercase-d data science here.
+This can include job titles of Data Scientist, Data Analyst,
+Quantitative Analyst, Data Engineer, and others.
+I'm not including data-driven features like product recommendations
+or travel time estimates, which are typically the domain of
+Machine Learning Engineers due to their scale and latency requirements.
 
-### Experimentation: Which version is better?
+The questions data scientsts get to wrestle with are varied, and they
+map closely to a company's org structure.
 
-### Personalization: Which one should I show you?
+#### All organizations
 
-### Optimization: Which plan is the best?
+- Decision support: Which choice should I make?
+- Experimentation: Which version is better?
 
-Price optimization - how much should I charge this customer for this thing or
-service?
+#### Product
 
-Tip/donation recommendation - what suggestions should I give someone for how
+- Personalization: Which one should I show you?
+- Tip/donation recommendation: What suggestions should I give someone for how
 much to give?
-
-### Product experience: Which pages to users visit? What buttons to they click?
+- Product experience: Which pages to users visit? What buttons to they click?
 What features do they use? What does this tell us about how we can improve
 their experience?
+- Demand forecasting: How many people will buy my product next year?
+
+#### Operations
+
+- Optimization: Which plan is the best? How can I minimize inventory?
+
+#### Marketing
+
+- Price optimization: How much should I charge this customer for this thing or
+service?
+- Marketing Mix Modeling: What is the return on investment for each additional 
+dollar spent in each of my marketing channels?
+
+#### Finance
+
+Forecasting: What will our revenue and expenses be next quarter?
+
+## Staff+ data scientists
+
+A well-defined technical problem, including all those listed above, are
+an excellent fit for the skills of a new data scientist or one with 3-5
+years experience. These are challenges you can train for and practice on.
+They have fairly clear demands and success criteria.
+
+Just like with every other part of technology, the very hardest part is people.
+In data science, this takes the form of understanding what people want,
+setting their expectations, and coordinating competing or misaligned incentives.
+From my own experience and from what I’ve heard from others, the hardest part of a staff plus data scientists job is people related. Being familiar with sophisticated tools and approaches is definitely valuable, but is often something bad a that did a scientist with a couple years of experience can do an excellent job on. It falls to more senior data folks to navigate the uncharted and shifting terrain of stakeholder management, cross team, coordination, and communication.
+Disclaimers, I’ll use for convenience. I’ll use the phrase senior dig a scientist year, this is different than the job title with a capital S common in companies. Generally, I’m referring to staff level and higher, typically folks who have been at it 5 to 7 years or more. Although the actual time in the role varies widely.
 
 ## The perrenial promise of self-serve
 

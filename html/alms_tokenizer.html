@@ -2,7 +2,7 @@
 <html>
 
   <script type="text/javascript">var blog_title = "Training an Artisanal Language Model's tokenizer";</script>
-  <script type="text/javascript">var publication_date = "February 15, 2026";</script>
+  <script type="text/javascript">var publication_date = "February 22, 2026";</script>
   <head>
     <link rel="icon" href="images/ml_logo.png">
     <meta charset='utf-8'>
@@ -18,6 +18,16 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
 
+
+<p>
+The first step in building a small-scale LLM, an
+<a href="https://brandonrohrer.com/alms.html">Artisanal Language Model</a>, is to
+create a vocabulary of tokens. This converts a long string of text into
+a somewhat shorter list of integers. We don't think about this step
+often because it happens behind the scenes of LLM creation, but
+building a model from scratch gives us the rare opportunity to look
+more closely at tokenization.
+</p>
 
 <p>
 The tokenizer is the first heavy duty processing that input data gets
@@ -41,13 +51,15 @@ string of English text like <code>How much wood could a woodchuck chuck?</code>,
 might be tokenized into <code>How much</code>, <code>wood</code>, <code>could</code>, <code>a wood</code>, <code>chuck</code>,
 <code>chuck</code>, <code>?</code>. Tokens don't fall strictly on word boundaries and can contain
 more than one word. Handling 7 tokens instead of 38 characters makes life
-a lot easier for the stages that follow.
+a lot easier for the stages that follow. Internally, each of these word
+pieces gets assigned a number for efficient handling, so this sentence
+ends up looking like <code>[6387, 73, 593, 5365, 837, 837, 24]</code>.
 </p>
 
 <p>
-Tokenization is an example of feature engineering, specifically of
-automated feature engineering, also known as feature learning or
-feature discovery. It is well known among machine learning practitioners
+Tokenization is an example of automated feature engineering,
+also known as feature learning or
+feature discovery. It is understood among machine learning practitioners
 that once you get a good set of features, you're 80% of the way to
 solving your problem. It is an important step to get right, and has a huge
 impact on the quality of results.
@@ -79,7 +91,7 @@ together. It means that a given sequence of tokens can represent
 a longer history of inputs. But it also means that the model has
 a larger number of relationships to consider. Any given input token
 might be predictive of any given output token, making the size of the
-that space $O(N^2)$&mdash;something that grows as the <em>square</em> of the the
+that space <em>O(N^2)</em>&mdash;something that grows as the <em>square</em> of the the
 number of tokens. And when you add in the fact that it's not just
 the current token, but the whole context history of tokens, that complexity
 goes up further. (Attention is the magic trick that keeps it from
@@ -87,8 +99,9 @@ exploding catastrophically. More on that later.)
 </p>
 
 <p>
-The flip side of this connection is that reducing a vocabulary to 10%
-of its original size means that the demands on model reduce by far more than
+The flip side of this relationship is that reducing a vocabulary to 10%
+of its original size means that the demands on
+the model are reduced by far more than
 that, down to something like 1% or 0.1%. The amount of training data needed,
 the computation required, the inference time, all get reduced. The smaller
 the vocabulary, the less time and expense to train and use a model.
@@ -103,7 +116,7 @@ needed to represent it well.
 <p>
 All the numbers I mention above are very hand wavy because LLMs are so very
 expensive to train and evaluate. I'm not aware of any research published
-about the exactly nature of the relationship between
+about the exact nature of the relationship between
 vocabulary size, number of model
 parameters, and model performance. A smaller ALM that is feasible to
 re-train a number of times make this investigation approachable.
@@ -120,52 +133,55 @@ necessary to define the task.
 </p>
 
 <p>
-For the purposes of this example, the task is to proofread English
+To choose an arbitrary example, the task is to proofread a
 manuscript draft and highlight words or phrases
 that might not be what the author intended. The manuscript will
-be in the general vein of classic science fiction and fantasy.
+be in English, in the general vein of classic science fiction and fantasy.
 </p>
 
 <p>
 The tokenizer will need some data to train on. The exact set of training
 texts don't matter too much because it will always be possible to
 retrain the tokenizer later. 
-<a href="Project Gutenberg">https://www.gutenberg.org</a> is a collection of Public
+<a href="https://www.gutenberg.org">Project Gutenberg</a> is a collection of Public
 Domain books and a great place to collect a starter pack of training texts.
 I pulled ten for training
 </p>
 
 <ol>
-<li> Dracula by Bram Stoker</li>
-<li> Hound of the Baskervilles by Arthur Conan Doyle</li>
-<li> The Legend of Sleepy Hollow by by Washington Irving</li>
-<li> The Lost World by Arthur Conan Doyle</li>
-<li> Ozma of Oz by L. Frank Baum				</li>
-<li> The Picture of Dorian Gray by Oscar Wilde</li>
-<li> Seven Dials Mystery by Agatha Christie</li>
-<li> The Time Machine by H. G. Wells</li>
-<li> Twenty Thousand Leagues Under the Sea by Jules Verne</li>
-<li> War of the Worlds by H. G. Wells</li>
+<li> <em>Dracula</em> by Bram Stoker</li>
+<li> <em>Hound of the Baskervilles</em> by Arthur Conan Doyle</li>
+<li> <em>The Legend of Sleepy Hollow</em> by by Washington Irving</li>
+<li> <em>The Lost World</em> by Arthur Conan Doyle</li>
+<li> <em>Ozma of Oz</em> by L. Frank Baum				</li>
+<li> <em>The Picture of Dorian Gray</em> by Oscar Wilde</li>
+<li> <em>Seven Dials Mystery</em> by Agatha Christie</li>
+<li> <em>The Time Machine</em> by H. G. Wells</li>
+<li> <em>Twenty Thousand Leagues Under the Sea</em> by Jules Verne</li>
+<li> <em>War of the Worlds</em> by H. G. Wells</li>
 </ol>
 
 <p>
 and set aside two for evaluation.
 </p>
 
-<ul>
-<li> Alice's Adventures in Wonderland by Lewis Carroll</li>
-<li> Frankenstein by Mary Wollstonecraft Shelley</li>
-</ul>
+<ol>
+<li> <em>Alice's Adventures in Wonderland</em> by Lewis Carroll</li>
+<li> <em>Frankenstein</em> by Mary Wollstonecraft Shelley</li>
+</ol>
 
 <h2><a id="Choosing-a-tokenizer"></a><a href="#Choosing-a-tokenizer">Choosing a tokenizer</a></h2>
 
 <p>
 There are a few common flavors of tokenizer, 
-- Byte-Pair Encoding (BPE) (byte-level byte-pair encoding is a variation)
-- WordPiece
-- Unigram
-- <a href="https://huggingface.co/papers/1808.06226">SentencePiece</a>
 </p>
+
+<ul>
+<li> <strong>Byte-Pair Encoding (BPE)</strong> (byte-level byte-pair encoding is a variation)</li>
+<li> <strong>WordPiece</strong></li>
+<li> <strong>Unigram</strong></li>
+<li> <strong><a href="https://huggingface.co/papers/1808.06226">SentencePiece</a></strong></li>
+</ul>
 
 <p>
 These are described well in
@@ -186,46 +202,185 @@ tokens.
 </p>
 
 <p>
-https://github.com/google/sentencepiece
+After looking through all the options, I decided to start with SentencePiece.
+It is a good fit for the use case, and comes ready to use in 
+<a href="https://github.com/google/sentencepiece">a repository</a> from Google, also
+available through PyPi.
+</p>
+
+<h2><a id="Training-the-tokenizer"></a><a href="#Training-the-tokenizer">Training the tokenizer</a></h2>
+
+<p>
+Training a SentencePiece tokenizer is straightforward thanks to the public
+repo and <a href="https://github.com/google/sentencepiece/blob/master/python/README.md">the Python wrapper</a>
+that can be installed with pip or <code>uv add sentencepiece</code>. It has a lot
+of good defaults, so you can train a good tokenizer with a short call:
 </p>
 
 <p>
-You can train a SentencePiece tokenizer
+<pre>
+import sentencepiece as spm
+spm.SentencePieceTrainer.train(input="training_file.txt", model_prefix="m")
+</pre>
 </p>
 
 <p>
-from tokenizers import SentencePieceBPETokenizer
+And it is shockingly fast. I was pretty sure mine had errored out because it
+finished in just a couple of seconds, but that's just how long it took.
 </p>
 
 <p>
-tokenizer = SentencePieceBPETokenizer()
-tokenizer.train_from_iterator(
-    text,
-    vocab_size=30_000,
-    min_frequency=5,
-    show_progress=True,
-    limit_alphabet=500,
+A short demo shows that it's working.
+</p>
+
+<p>
+<pre>
+sp = spm.SentencePieceProcessor()
+sp.load("m.model")
+test_sentence = "This is a test of the sentencepiece tokenizer."
+test_pieces = sp.encode_as_pieces(test_sentence)
+print(test_pieces)
+test_ids = sp.encode_as_ids(test_sentence)
+print(test_ids)<br>
+print(sp.decode_pieces(test_pieces))
+print(sp.decode_ids(test_ids))
+</pre>
+</p>
+
+<p>
+There are lots of options to tweak how the tokenizer works. At this point
+there isn't a great way to say which is better. That can only happen
+once it's connected to a language model and performing a task. But here
+I'll note some variations and hyperparameters that will be worth
+experimenting with.
+There's <a href="https://github.com/google/sentencepiece/blob/master/doc/options.md">an exhaustive list here</a>
+for reference. Here are some of the arguments that appear useful for
+building a proofreading tool.
+</p>
+
+<h4><a id="<code>input</code>"></a><a href="#<code>input</code>"><code>input</code></a></h4>
+
+<p>
+This is the biggest one. It specifies the training data. You can include
+multiple files in a comma-separated list like so
+<pre>
+input="training_file_1.txt,training_file_2.txt,training_file_3.txt"
+</pre>
+</p>
+
+<p>
+Choosing the inputs is by far the biggest factor in customizing the tokenizer.
+</p>
+
+<h4><a id="<code>model_prefix</code>"></a><a href="#<code>model_prefix</code>"><code>model_prefix</code></a></h4>
+
+<p>
+This is just the name of the model files that get generated.
+For <code>model_prefix="m"</code>, the files created are <code>m.model</code> and <code>m.vocab</code>.
+</p>
+
+<h4><a id="<code>vocab_size</code>"></a><a href="#<code>vocab_size</code>"><code>vocab_size</code></a></h4>
+
+<p>
+The total number of tokens to create, e.g. <code>vocab_size=20000</code>. Defaults to
+8000.
+</p>
+
+<h4><a id="<code>model_type</code>"></a><a href="#<code>model_type</code>"><code>model_type</code></a></h4>
+
+<p>
+Can be <code>unigram</code> (default), <code>bpe</code>, <code>char</code>, or <code>word</code>.
+The input sentence must be pretokenized when using word type.
+</p>
+
+<h4><a id="<code>split_by_whitespace</code>"></a><a href="#<code>split_by_whitespace</code>"><code>split_by_whitespace</code></a></h4>
+
+<p>
+If <code>True</code> (default), this makes sure to split all words at space
+boundaries and won't create multi-word tokens. 
+</p>
+
+<h4><a id="<code>normalization_rule_name</code>"></a><a href="#<code>normalization_rule_name</code>"><code>normalization_rule_name</code></a></h4>
+
+<p>
+There are a few ways to pre-process the data to clean it up and make it
+more uniform.
+</p>
+
+<ul>
+<li> <code>identity</code>: no normalization</li>
+<li> <code>nfkc</code>: NFKC normalization, which makes sure Unicode is represented in a consistent way.</li>
+<li> <code>nmt_nfkc</code> (default): NFKC normalization with some additional
+normalization around spaces</li>
+<li> <code>nfkc_cf</code>: <code>nfkc</code> + Unicode case folding (mostly lower casing)</li>
+<li> <code>nmt_nfkc_cf</code>: <code>nmt_nfkc</code> + Unicode case folding </li>
+</ul>
+
+<p>
+For proofreading, the <code>identity</code> is the best option, because I don't want
+any irregularities to get swept under the rug.
+</p>
+
+<h4><a id="<code>remove_extra_whitespaces</code>"></a><a href="#<code>remove_extra_whitespaces</code>"><code>remove_extra_whitespaces</code></a></h4>
+
+<p>
+If <code>True</code> (default), removes leading, trailing, and duplicate internal whitespace.
+For proofreading I'll set this
+to False so that any undesirable spacing can be detected.
+</p>
+
+<p>
+<br>
+</p>
+
+<p>
+These options can all be expressed as Python arguments or as a command
+line style string. For example, this
+</p>
+
+<p>
+<pre>
+spm.SentencePieceTrainer.train(
+    input="inputs.txt"
+    model_prefix="m",
+    model_type="unigram,
+    vocab_size=10000,
 )
-and then just wrap it with a PreTrainedTokenizerFast
+</pre>
 </p>
 
 <p>
-from transformers import PreTrainedTokenizerFast
+or this
 </p>
 
 <p>
-transformer_tokenizer = PreTrainedTokenizerFast(
-    tokenizer_object=tokenizer
+<pre>
+spm.SentencePieceTrainer.train(
+    "--input=inputs.txt --model_prefix=m --model_type=unigram --vocab_size=10000"
 )
-Documentation is not quite clear about this
+</pre>
 </p>
 
 <p>
-https://discuss.huggingface.co/t/training-sentencepiece-from-scratch/3477
+As far as I can tell they produce identical results, meaning that whoever
+wrote the Python wrapper did a good job of convering the argument list,
+so you can choose whichever approach speaks to you.
 </p>
 
 <p>
-https://huggingface.co/docs/transformers/fast_tokenizers
+These pieces are all assembled into
+<a href="https://codeberg.org/brohrer/alms/src/branch/main/src/proofread_eng_scifi/tokenizer_example.py">some example code</a>
+for reference that you can dowload and play with.
+</p>
+
+<p>
+The cool part about this is that that even though tokenization is a
+preprocessing step, we've already been able to customize it to our use case.
+This is a luxury of ALMs that LLMs cannot afford; they are stuck trying
+to cover such a broad set of use cases that they can't optimize for a
+single one. This raises the intriguing possibility that ALMs might not
+only be able to match the performance of LLMs on their chosen task,
+but may even be able to exceed it.
 </p>
 
         <script src="javascripts/blog_signature.js"></script>
