@@ -1,0 +1,95 @@
+# Giving the Artisanal Language Model a job
+
+A defining feature of an ALM is that it is purpose built for a well-defined
+task. So far the task has only been described in general terms: proofreading
+English prose of a novel draft.
+
+It’s time to get more specific about what this ALM will do, what
+its inputs and outputs will be, so that I can actually start building it.
+It’s also time to define some tests and performance measures.
+I’ll need them when I have something running and I make a change;
+I’ll need some way to measure whether it got better.
+
+## Inputs
+
+After the ALM has been trained, I’ll want to feed it text to proofread.
+To start with I’ll plan to do this through the simplest and clunliest way
+I can think of: passing it the path to a text file containing the text
+to be proofread. In an actual professional product built for users,
+this is probably not ideal, but it’s a nice generalizable front door
+that slicker user interfaces can be built around in the future.
+
+## Outputs
+
+After the proofreader has done its job and identified segments that might
+need correction, those segments will be reported as positions in
+the input text. Specifically, when the text file is read in as a string,
+the index of starting character position and ending character will be used
+to tag segments for inspection and correction.
+Position of the suspected error will be reported as a pair of indices.
+This collection of start/finish pairs will be the output of the proofreader.
+
+There are a lot of other things that could be enhanced about this to provide
+a good user experience, and I leave the door open to add those later.
+For instance, the text file could be modified to include special characters
+marking the suspect segments. Or a fancier graphical UI could simply
+highlight the potential errors or underline them, as is common in
+word processors. An even fancier extension could propose corrections
+and offer the user a single keystroke way to select from a number
+of suggestions. But all of these could be built on top of a pair of
+start and end markers for each proofreading note.
+
+## Evaluation
+
+I’ll need a way to evaluate the progress. If I try to enhance my
+proofreading model, how will I know if it worked? The variety
+of all possible text to be proofread is so large, it’s impossible to test
+every variation exhaustively. The best I can hope to do is come up with is
+a representative sample.
+
+This falls somewhere in between the traditional software engineering practice
+of testing, where the notion of right and wrong answers and what a function
+must do is fairly clean cut, and bench marking, which is a consensus
+driven measure for comparing solutions in a broadly recognized way.
+It’s what has come to be known in LLM development as evaluations or,
+more affectionately, **evals**.
+Evals are a reasonable sample of the space in which a language model
+is expected to work. They lack the recognition and respect has
+a full-blown benchmark, and also lack the rigor and confidence of carefully
+designed tests. But despite having the worst of both worlds,
+evals operate in a space that we cannot ignore, and for which there is
+no better solution that I know of.
+
+In practice, evals are organic. They grow to cover new use cases
+and new failure modes during the development process. But it’s helpful
+think through a reasonable initial set. For proofreading there
+are several classes of errors that are important to cover.
+
+- **Spelling**. Febuary. Febrewary. Februry. Fabuwary.
+- **Word choice**. Catching when it should be "imply" and when it should be "infer".
+To/two/too. There/their/they're.
+- **Punctuation**. Appropriate sentence termination. Comma usage.
+Quotation mark usage.
+- **White space**. Extra spaces. Spaces around punctuation. Weird indents.
+- **Capitalization**.
+- **Grammar**. Verb tense. Pronoun-antecedent agreement.
+Preposition choice.
+
+These aren’t exhaustive, but there’s no need for evals to be exhaustive
+in order to be useful. I will almost certainly add more later as I
+discover new categories that aren’t getting picked up well.
+But they are a good place to start.
+
+## Creating evals for each category.
+
+In practice, to test how well a given language model performs in these areas, I’ll need to create an evaluation data set. For each of the areas above, I’ll pull five paragraphs arbitrarily from an evaluation text (Frankenstein by Mary  Bysshe Shelly) And throw 10 errors into the text of a given type. Having five paragraphs full of spelling errors gives a total of 50 spelling errors to detect. Each paragraph will come with its own answer key, the beginning and end of each word or phrase containing the error. After the proofreading model processes, the paragraph, the errors it detects will be compared against the ground truth.
+
+A ground truth, error that is overlapped by at least one model detected error is considered detected. A model detected error that overlaps at least one ground truth. Error is considered an accurate detection. A model detected error that doesn’t overlap a ground truth error will be considered a false positive. A ground truth error that is not overlapped by at least one model detected error will be considered a false negative.
+
+Recall will be defined as the total number of detected ground truth errors over the total number of ground true errors.
+
+Accuracy will be a total number of ground truth errors detected divided by the total number of false negatives plus The number of ground truth errors detected.
+
+Precision will be
+
+
