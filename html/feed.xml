@@ -7,6 +7,39 @@
 
   <item>
     <title>
+    Transformers from the inside out
+    </title>
+    <link>
+    https://brandonrohrer.org/transformers
+    </link>
+    <pubDate>
+    Tue, 17 Mar 2026 08:36:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.org/transformers
+    </guid>
+    <description><![CDATA[
+
+<p>
+If your agentic coding environment is a Formula One car then the engine
+is the Transformer. The coolest thing to me about transformers is that
+they can be broken down into their tiniest pieces and understood,
+the way an engine can be disassembled to its smallest parts.
+</p>
+
+<p>
+I wrote
+<a href="https://brandonrohrer.org/transformers">
+a step by step walkthrough</a> of the re-assembly of a transformer
+starting from its tiniest bits. No machine learning background required.
+If you like looking under the hood, this is for you.
+</p>
+
+    ]]></description>
+  </item>
+
+  <item>
+    <title>
     Training your own Language Model Tokenizer
     </title>
     <link>
