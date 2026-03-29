@@ -200,7 +200,7 @@ but rather someone rationally pursuing what is best for them and their team.
 One of the hardest things a senior data scientist will ever have to do
 is build a mental model of these incentives and chart a course that
 successfully splits the difference
-[between Scylla and Charybdis]()https://en.wikipedia.org/wiki/Between_Scylla_and_Charybdis).
+[between Scylla and Charybdis](https://en.wikipedia.org/wiki/Between_Scylla_and_Charybdis).
 
 ## When stakeholders undervalue to skill and underestimate the time required
 
@@ -261,29 +261,129 @@ data product.
 
 How do you communicate the cost of real time data availability?
 
-## 
+On the surface, it seems like a reasonable request.  A liter looking at a dashboard is like a pilot in the cockpit of a fighter jet. They can see their instruments, look at the windows, and use all the information at their fingertips to make quick decisions and save the day. Of course they would want that information to be real time. If it were delayed, then they might miss critical opportunities and get shot down.
 
-Hard problems in data science.
+But an analytics dashboard is different than a fighter cockpit in more than one way. The world it’s representing doesn’t meaningfully change from one second to the next unless you’re doing high-speed trading. In most cases, it barely changes from one day to the next. When that’s the case, real time updates feel useful, but don’t deliver any actionable information.
 
-Communication
+More importantly, the decisions that get made based on those dashboards don’t get made minute to minute or even an hour to hour. They are typically decisions that factor into quarterly planning, or sprint planning,- decisions that occur every few months or weeks. Maybe every few days. Because of that having. the dash more update frequently this does not drive better decisions.
 
-How do you communicate uncertainty?
-How do you communicate the gap between proxy metrics and actual impacts?
+The engineering effort required to go from nightly updates to a few second latency are considerable. Nightly updates, or even hourly, can be done by some dag based orchestration pipeline Orchestra. It operates on tables and produces tables which are easy to read and write to in code. Real time updates involve you using stream technology, like cuff, cut, or flank, these are amazing when you need them, but they have many more moving parts. More things that can break, things that you have to keep an eye on. More things that can cause the pipeline to go down in the dashboard to get wonky and require laborious backfills and require carefully worded responses to frustrated questions from leaders. About why their nerve Center dashboard suite has gone down. To operate at the same reliability, it might require 3 to 5 times the effort and dollars.
 
-Coordination
+This is a conversation that most senior data scientist, end up, having at least once in their careers. And they usually lose.
 
-How do you coordinate definitions, tools, practices, decision criteria across a large data science team? Across multiple organizations in the company?
+## Communicating uncertainty
 
-How do you connect data science teams with work that lets them stretch their intellectual legs?
+Statistics, the native language of the data scientist, is all about
+distributions. But decisions get made based on concrete values.
+A business decision-maker may have a rule of thumb in their head like
+“If the cost is less than three dollars, Buy it, otherwise pass”.
+So they ask a data scientist, how much it will cost.
 
-Epistemology
-How do you help new hires release their death grip on academic standards of rigor?
+DS: About three and a half dollars.
+
+BDM: What do you mean "about"? What will the actual price be?
+
+DS: Between two and five dollars.
+
+BDM: That’s a huge range. But you’re saying it definitely won’t be less
+than two dollars? And definitely not more than five?
+
+DS: Well, no, it might be less than two or more than five.
+But it probably won’t.
+
+BDM: * Reaches for magic eight ball *
+
+Translating from the fuzzy smear of a probability distribution
+to concrete values to support decision making is one of the hardest things
+a data scientist has to do. The two representations are fundamentally
+mismatched, and the mental models required to reason about them are
+nearly irreconcilable.
+
+If your audience is familiar with gambling, this gives some useful
+footholds like over-under and  odds ratios. Even better if they are
+familiar with rolling 20 sided dice. You can also try using percentages,
+statistical significance, confidence intervals, and upper/lower bounds,
+and see which you have the greatest success with.
+
+The more senior you get as a data scientist, the more of these conversations
+you end up having, talking with people who haven’t spent years
+building mental models of distributions.
+This conversation is a recurring one. Some version of it occurs with every
+analysis, and every decision. Bridging this gap well is what lets
+the hard work of a data science team carry maximum weight in the rest
+of the company. It has a high return on investment.
+
+## Building within-team consensus on how things are done
+
+Closely related is helping data science teams communicate about 
+uncertainty consistently within themselves. New career data scientists
+are usually taught frequentist null hypothesis significance testing.
+The *p* $lt$ .05 threshold is drilled into them as an axiom. As a rule
+of thumb it’s useful, but as an iron law, it is limiting.
+Another very useful thing a senior data scientist can do is help
+the rest of the team look past the *p*-value and consider the context
+of the decision. Talking through the cost of false positives and
+false negatives, the likely distribution of classes in practice,
+the opportunity cost of running long experiments in order to reach
+significance, alternative ways of evaluating distributions
+for decision-making. Helping the whole team to level up and to speak
+the same language naturally falls on the senior data scientist
+as a technical leader. 
+
+This work extends to coordinating definitions, tools, practices,
+and decision criteria more generally. There is tension between the
+scientific freedom of allowing everyone to use the analyses, statistical
+tools, modeling techniciques, presentation formats, and feature definitions
+that they prefer, and the chaos that brings about. The larger the data
+science team, the greater the chaos. Setting norms for these,
+particularly across multiple organizations, is a big undtertaking and
+difficult to do in a way that doesn't feel heavy handed. Senior data
+data scientists that are able to pull this off are rare but their impact
+is huge.
+
+## Collaboration with partner teams
+
+Data scientists work as a specialized piece of a larger machine.
+They rely on data analysts embedded in other teams, where they work with
+data analysts to define data models and metric definitions. They work with
+data engineers to establish availability, freshness, data types, and
+standard transformations. They work with infrastructure engineers to make
+sure the data they need is accessible at reasonable latencies.
+They work with frontend engineers to make sure important events are
+instrumented and logged. They work with backend engineers to make sure
+important events are logged there as well and sometimes to pre-compute
+expensive features.
+
+Data scientists are part of an interconnected web and can only do what they do
+because of the other work that goes on around them, coordinating with
+these teams, supporting them in turn, keeping those communication
+lines open and trust high.
+
+## Designing a data science organization: Central vs distributed
+
+At a certain level of seniority in a small company, you may be asked to help
+grow a data science team from scratch. Once the product team and the
+marketing team and the finance team all see how useful a data scientist can be,
+they'll each want their own team. A budding data science manager may prefer
+to keep the team together under one umbrella, perhaps in the same org as
+the analytics or the data engineering team. It is a recurring dilemma
+of central vs distributed data science teams.
+
+There is no right answer. Either can work *if* the organization is healthy
+and incentives are properly aligned.  If not than *neither* will work well.
 
 
 
 How do you design KR’s to align with company goals?
+the gap between proxy metrics and actual impacts?
 
 
-Leadership communication
+Delivering Disappointing Results
 
 Most leaders don’t like it when numbers disagree with their intuition or expectations. As much as they profess to be dated driven, more often than not they seek to be data validated. If you get the answer, they expect, or a pleasant surprise, they will doubt it. If you come up with something surprising, disappointing, or uncomplimentary, they may push back question assumptions ask you to revisit it just changes to the approach we’re simply reject the result.
+
+
+## Hiring and getting hired
+
+"Applications don't work"
+

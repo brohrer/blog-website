@@ -7,6 +7,40 @@
 
   <item>
     <title>
+
+    Transformers from the inside out
+    </title>
+    <link>
+    https://brandonrohrer.org/data_eng_for_beginners.html
+    </link>
+    <pubDate>
+    Sun, 29 Mar 2026 08:36:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.org/data_eng_for_beginners.html
+    </guid>
+    <description><![CDATA[
+
+<p>
+If you need to climb the Data Engineering learning curve quickly (perhaps in preparation for an interview) I made
+<a href="https://brandonrohrer.org/data_eng_for_beginners.html">
+a handy one-stop guide</a>.
+</p>
+
+<p>
+It covers all the basic concepts in a beginner-friendly way. 
+The cool part is that most of them aren't too complex, once you strip away
+the fancy names. when you're done, you'll know the difference between
+strong consistency and eventual consistency, between a flat schema
+and a star schema, between OLAP and OLTP, and you'll be able to explain
+what makes a data warehouse, a data catalog, a data lake, and a data mart.
+</p>
+    ]]></description>
+  </item>
+
+
+  <item>
+    <title>
     Transformers from the inside out
     </title>
     <link>
