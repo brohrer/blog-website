@@ -1,4 +1,4 @@
-# What does a Data Scientist do in 2026?
+# Being a Staff+ Data Scientist in 2026
 
 I became a data scientist in 2013 when the title was young.
 It was so new that most companies had no idea what a data scientist should
@@ -20,7 +20,12 @@ anymore. It's time for a refresh.
 
 ### In the beginning...
 
-When data science first got huge organizations expected
+The field of data science was named in 1997,
+and the discipline has existed by other names
+for a very long time. After all,
+people have been answering questions using data for thousands of years.
+
+When data science first got huge, organizations expected
 data scientists to spin straw into gold---to transform
 unorganized data archives into profit. Big Data, it was believed,
 held inherent value, which only needed to be coaxed into cash form.
@@ -67,13 +72,6 @@ But they can still have a big effect on a data scientist's day.
 The next hot new trend has not yet emerged, but if the historical 5 year cycle
 holds true, it's due any day now.
 
-### The Before Times
-
-On the pre-history side, the field of data science was named in 1997,
-and the discipline has existed by other names
-for a very long time. After all,
-people have been answering questions using data for thousands of years.
-
 ## What is "data science"?
 
 I define data science as "answering questions using data". 
@@ -89,17 +87,12 @@ and skills (although there is plenty of overlap).
 The questions data scientsts get to wrestle with are varied, and they
 map closely to a company's org structure.
 
-#### All organizations
-
-- Decision support: Which choice should I make?
-- Experimentation: Which version is better?
-
 #### Product
 
 - Personalization: Which one should I show you?
 - Tip/donation recommendation: What suggestions should I give someone for how
 much to give?
-- Product experience: Which pages to users visit? What buttons to they click?
+- Product experience: Which pages do users visit? What buttons to they click?
 What features do they use? What does this tell us about how we can improve
 their experience?
 - Demand forecasting: How many people will buy my product next year?
@@ -119,7 +112,12 @@ dollar spent in each of my marketing channels?
 
 - Forecasting: What will our revenue and expenses be next quarter?
 
-## What about Staff+ data scientists
+#### All organizations
+
+- Decision support: Which choice should I make?
+- Experimentation: Which version is better?
+
+## What about Staff+ data scientists?
 
 A well-defined technical problem, including all those listed above, are
 an excellent fit for the skills of a new data scientist or one with 3-5
@@ -152,28 +150,6 @@ probability distribution means for reporting quarterly performance.
 
 Here are the stickiest recurring topics I've been hearing about.
 
-## The perrenial promise of self-serve
-
-Every DS organization I've worked in has gone through this cycle:
-
-1. Data scientists generate useful results
-2. Stakeholders find them valuable
-3. Stakeholders ask for more such results, with increasing frequency
-4. DSs get tired of running similar queries over and over
-5. A "self-serve analytics" function is proposed
-
-I've never seen this approach solve the original problem of getting stakeholders
-all the information they need without burdening the DSs. Either
-
-- a basic self-serve system is fielded, which inevitably leads to follow-up
-questions outside of its scope. DSs are answering more questions than ever.
-- a complex self-serve system is fielded, which requires stakeholders to
-learn a querying language, like SQL or a simplified version of it.
-They don't, and DSs remain in the role of human user interface.
-- DSs get deep into building an intuitive, highly capable
-self-serve system. The project stope is large and they and aren't available
-to field query questions of any sort.
-
 ## When stakeholders prefer a cheap, fast wrong answer to a good one
 
 The biggest impact of AI (large language model) assistants on data science
@@ -190,10 +166,10 @@ being cautious and correct.
 It has bled over from strategic leadership (where
 ambiguity is ubiquitous and one of the greatest risks is indecision)
 to analysis and engineering (where incaution can lead to loss of limb,
-life, and cash). And in most large organizations, individual stakeholders
+life, and cash). And in most large organizations individual stakeholders
 don't get to feel the effects of being wrong. Those usually take time to
 materialize. So they can prioritize being fast and confident, which
-their AI analytics queries are all to happy to help them out with.
+their AI-assisted analytics queries are all too happy to help them out with.
 
 In almost every case, the overriding concern is not accuracy or rigor,
 but rather someone rationally pursuing what is best for them and their team.
@@ -238,7 +214,7 @@ the return on a carefully run experiment? the cost of accurately attributing
 a metric shift to a product change?
 How do you advocate for six-month-plus time investments in
 a company that never looks more than three months ahead?
-And Heaven help you if you are trying to make a case for improving
+And heaven help you if you are trying to make a case for improving
 the robustness of your pipelines or pre-emptively cleaning your data.
 
 Learning things from data can be expensive. A carefully constructed
@@ -260,16 +236,65 @@ data product.
 
 
 How do you communicate the cost of real time data availability?
+On the surface, it seems like a reasonable request.  A leader looking at
+a dashboard is like a pilot in the cockpit of a fighter jet.
+They can see their instruments, look out the windows, and use all
+the information at their fingertips to make quick decisions and save the day.
+Of course they would want that information to be real time.
+If it were delayed, then they might miss critical opportunities
+and get shot down.
 
-On the surface, it seems like a reasonable request.  A liter looking at a dashboard is like a pilot in the cockpit of a fighter jet. They can see their instruments, look at the windows, and use all the information at their fingertips to make quick decisions and save the day. Of course they would want that information to be real time. If it were delayed, then they might miss critical opportunities and get shot down.
+But an analytics dashboard is different than a fighter cockpit in more
+than one way. The world it’s representing doesn’t meaningfully change
+from one second to the next unless you’re doing high-speed trading.
+In most cases, it barely changes from one day to the next. When that’s
+the case, real time updates feel useful, but don’t deliver any
+actionable information.
 
-But an analytics dashboard is different than a fighter cockpit in more than one way. The world it’s representing doesn’t meaningfully change from one second to the next unless you’re doing high-speed trading. In most cases, it barely changes from one day to the next. When that’s the case, real time updates feel useful, but don’t deliver any actionable information.
+More importantly, the decisions that get made based on those dashboards
+don’t get made minute-to-minute or even hour-to-hour. They are
+typically decisions that factor into quarterly planning
+or sprint planning---decisions that occur every few months or weeks.
+Maybe every few days. Because of that, having the dash more update
+frequently this does not drive better decisions.
 
-More importantly, the decisions that get made based on those dashboards don’t get made minute to minute or even an hour to hour. They are typically decisions that factor into quarterly planning, or sprint planning,- decisions that occur every few months or weeks. Maybe every few days. Because of that having. the dash more update frequently this does not drive better decisions.
+The engineering effort required to go from nightly updates to few-second
+latency are considerable. Nightly updates, or even hourly, can be done by
+some DAG-based pipeline orchestror. It operates on tables and produces tables,
+which are easy to read and write to in code. Real time updates involve
+using stream technology, like Kafka or Flink. These are amazing when you
+need them, but they have many more moving parts, more things that can break,
+more things that you have to keep an eye on, more things that can cause
+the pipeline to go down and the dashboard to get wonky and
+require laborious backfills and carefully worded responses to frustrated
+questions from leaders about why their nerve center dashboard suite
+has gone down. To operate at the same reliability, it might require
+3 to 5 times the effort and dollars.
 
-The engineering effort required to go from nightly updates to a few second latency are considerable. Nightly updates, or even hourly, can be done by some dag based orchestration pipeline Orchestra. It operates on tables and produces tables which are easy to read and write to in code. Real time updates involve you using stream technology, like cuff, cut, or flank, these are amazing when you need them, but they have many more moving parts. More things that can break, things that you have to keep an eye on. More things that can cause the pipeline to go down in the dashboard to get wonky and require laborious backfills and require carefully worded responses to frustrated questions from leaders. About why their nerve Center dashboard suite has gone down. To operate at the same reliability, it might require 3 to 5 times the effort and dollars.
+This is a conversation that most senior data scientists end up having
+at least once in their careers. And they usually lose.
 
-This is a conversation that most senior data scientist, end up, having at least once in their careers. And they usually lose.
+## The perrenial promise of self-serve
+
+Every DS organization I've worked in has gone through this cycle:
+
+1. Data scientists generate useful results
+2. Stakeholders find them valuable
+3. Stakeholders ask for more such results, with increasing frequency
+4. DSs get tired of running similar queries over and over
+5. A "self-serve analytics" function is proposed
+
+I've never seen this approach solve the original problem of getting stakeholders
+all the information they need without burdening the DSs. Either
+
+- a basic self-serve system is fielded, which inevitably leads to follow-up
+questions outside of its scope. DSs are answering more questions than ever.
+- a complex self-serve system is fielded, which requires stakeholders to
+learn a querying language, like SQL or a simplified version of it.
+They don't, and DSs remain in the role of human user interface.
+- DSs get deep into building an intuitive, highly capable
+self-serve system. The project stope is large and they and aren't available
+to field query questions of any sort.
 
 ## Communicating uncertainty
 
@@ -318,7 +343,7 @@ of the company. It has a high return on investment.
 Closely related is helping data science teams communicate about 
 uncertainty consistently within themselves. New career data scientists
 are usually taught frequentist null hypothesis significance testing.
-The *p* $lt$ .05 threshold is drilled into them as an axiom. As a rule
+The *p* &lt; .05 threshold is drilled into them as an axiom. As a rule
 of thumb it’s useful, but as an iron law, it is limiting.
 Another very useful thing a senior data scientist can do is help
 the rest of the team look past the *p*-value and consider the context
@@ -373,17 +398,14 @@ There is no right answer. Either can work *if* the organization is healthy
 and incentives are properly aligned.  If not than *neither* will work well.
 
 
+## Delivering Disappointing Results
 
-How do you design KR’s to align with company goals?
-the gap between proxy metrics and actual impacts?
+Most leaders don’t like it when numbers disagree with their intuition
+or expectations. As much as they profess to be data-driven, more often
+than not they seek to be data-validated. If you get the answer they expect,
+they will accept and maybe celebrate it. If you come up with something
+surprising, disappointing, or uncomplimentary, they may push back,
+question assumptions, ask you to revisit it, suggest changes to the approach,
+or simply reject the result.
 
-
-Delivering Disappointing Results
-
-Most leaders don’t like it when numbers disagree with their intuition or expectations. As much as they profess to be dated driven, more often than not they seek to be data validated. If you get the answer, they expect, or a pleasant surprise, they will doubt it. If you come up with something surprising, disappointing, or uncomplimentary, they may push back question assumptions ask you to revisit it just changes to the approach we’re simply reject the result.
-
-
-## Hiring and getting hired
-
-"Applications don't work"
-
+TODO: complete this
