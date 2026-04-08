@@ -80,16 +80,39 @@ in order to be useful. I will almost certainly add more later as I
 discover new categories that aren’t getting picked up well.
 But they are a good place to start.
 
-## Creating evals for each category.
+## Creating evals for each category
 
-In practice, to test how well a given language model performs in these areas, I’ll need to create an evaluation data set. For each of the areas above, I’ll pull five paragraphs arbitrarily from an evaluation text (Frankenstein by Mary  Bysshe Shelly) And throw 10 errors into the text of a given type. Having five paragraphs full of spelling errors gives a total of 50 spelling errors to detect. Each paragraph will come with its own answer key, the beginning and end of each word or phrase containing the error. After the proofreading model processes, the paragraph, the errors it detects will be compared against the ground truth.
+In practice, to test how well a given language model performs in each of
+these areas, I’ll need to create an evaluation data set. For each of the
+areas above, I’ll pull five paragraphs arbitrarily from an evaluation text
+(Frankenstein by Mary Wollstonecraft (Godwin) Shelley) and throw 10 errors into
+the text of a given type. Having five paragraphs full of spelling errors
+gives a total of 50 spelling errors to detect. Each paragraph will come
+with its own answer key, the beginning and end of each word or phrase
+containing the error. After the proofreading model processes the paragraph,
+the errors it detects will be compared against the ground truth.
 
-A ground truth, error that is overlapped by at least one model detected error is considered detected. A model detected error that overlaps at least one ground truth. Error is considered an accurate detection. A model detected error that doesn’t overlap a ground truth error will be considered a false positive. A ground truth error that is not overlapped by at least one model detected error will be considered a false negative.
+- A ground truth error that is overlapped by at least one model detected-error
+is considered detected (**true positive**). This is not quite the same thing as
+- A model-detected error that overlaps at least
+one ground truth error. This is considered an accurate detection, but there
+may be several of these per ground truth error. I can't use this as the
+true positive count because it could result in inflated counts.
+- A model-detected
+error that doesn’t overlap a ground truth error will be considered
+a **false positive**.
+- A ground truth error that is not overlapped by at least
+one model detected error will be considered a **false negative**.
 
-Recall will be defined as the total number of detected ground truth errors over the total number of ground true errors.
+Recall will be defined as the total number of model-detected ground truth
+errors (true positives) over the total number of ground truth errors
+(true positives plus false negatives).
 
-Accuracy will be a total number of ground truth errors detected divided by the total number of false negatives plus The number of ground truth errors detected.
+Accuracy will be a total number of model-detected ground truth errors
+(true positives) divided by the total number of true positives
+plus false positives. When there are no true positives or false positives,
+accuracy will be undefined.
 
-Precision will be
+## Creating the evaluation dataset
 
 

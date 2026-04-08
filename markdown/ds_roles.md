@@ -85,7 +85,7 @@ These are typically dominated by a separate set of constraints, tools,
 and skills (although there is plenty of overlap).
 
 The questions data scientsts get to wrestle with are varied, and they
-map closely to a company's org structure.
+map closely to a company's org structure. Here are some greatest hits.
 
 #### Product
 
@@ -117,7 +117,7 @@ dollar spent in each of my marketing channels?
 - Decision support: Which choice should I make?
 - Experimentation: Which version is better?
 
-## What about Staff+ data scientists?
+## What about staff+ data scientists?
 
 A well-defined technical problem, including all those listed above, are
 an excellent fit for the skills of a new data scientist or one with 3-5
@@ -130,21 +130,18 @@ In data science, this takes the form of understanding what people want,
 setting their expectations, and coordinating misaligned or competing incentives.
 Being familiar with sophisticated tools and approaches is definitely valuable,
 but is often something that a data scientist with a couple years of experience
-can do an excellent job on. It falls to more senior data folks to navigate
+can do an excellent job on. It falls to staff+ data folks to navigate
 the uncharted and shifting terrain of stakeholder management, cross-team
 coordination, and communication.
-
-Disclaimer: for convenience. I’ll use the phrase "senior data scientist" here.
-This is different than the job title with a capital S "Senior" common
-in companies. Generally, I’m referring to staff level and higher, typically
-folks who have been at it 5 to 7 years or more (although the actual time
-in the role varies widely).
+(I'm using "staff+" to refer to staff level and higher, typically
+folks who have been at it 5 to 7 years or more, although the actual time
+in the role varies widely.)
 
 Most of these are struggles that data scientists have faced since
-the beginning. Often, one of the biggest contributions that a senior
+the beginning. Often, one of the biggest contributions that a staff+
 data scientist can make is to be a bridge between data science work
 and the rest of the org---including engineers, marketing, finance, product, and
-C-suite officers of all stripes. Senior data scientists are expected
+C-suite officers of all stripes. Staff+ data scientists are expected
 to take the ambiguity out of the message, for instance translating what a
 probability distribution means for reporting quarterly performance.
 
@@ -173,12 +170,12 @@ their AI-assisted analytics queries are all too happy to help them out with.
 
 In almost every case, the overriding concern is not accuracy or rigor,
 but rather someone rationally pursuing what is best for them and their team.
-One of the hardest things a senior data scientist will ever have to do
+One of the hardest things a staff+ data scientist will ever have to do
 is build a mental model of these incentives and chart a course that
 successfully splits the difference
 [between Scylla and Charybdis](https://en.wikipedia.org/wiki/Between_Scylla_and_Charybdis).
 
-## When stakeholders undervalue to skill and underestimate the time required
+## When stakeholders undervalue the skill and underestimate the time required
 
 A closely related trend is a common assumption that data analysis has
 somehow gotten easier and faster, so much so that it is disposable. 
@@ -205,7 +202,7 @@ of the product leader even if their camera is off.
 
 ## I want it now
 
-In a separate but related issue, stakeholders are often reluctant to invest
+In a separate but related issue, stakeholders are sometimes reluctant to invest
 the time required to get high quality results. Bullish demands for unrealistic
 timelines have somehow become confused with strong leadership.
 Conveying the return on that time investment is a recurring challenge.
@@ -233,7 +230,6 @@ One particular example of "I want it now" is common enough to call out on its
 own: The up-to-the-minute data dashboard. The sense of power it gives is
 intoxicating, so it's no surprise that it is such a commonly requested
 data product.
-
 
 How do you communicate the cost of real time data availability?
 On the surface, it seems like a reasonable request.  A leader looking at
@@ -271,37 +267,39 @@ questions from leaders about why their nerve center dashboard suite
 has gone down. To operate at the same reliability, it might require
 3 to 5 times the effort and dollars.
 
-This is a conversation that most senior data scientists end up having
+This is a conversation that most staff+ data scientists end up having
 at least once in their careers. And they usually lose.
 
 ## The perrenial promise of self-serve
 
-Every DS organization I've worked in has gone through this cycle:
+Every data science organization I've worked in has gone through this cycle:
 
 1. Data scientists generate useful results
 2. Stakeholders find them valuable
 3. Stakeholders ask for more such results, with increasing frequency
-4. DSs get tired of running similar queries over and over
+4. Data scientists get tired of running similar queries over and over
 5. A "self-serve analytics" function is proposed
 
 I've never seen this approach solve the original problem of getting stakeholders
-all the information they need without burdening the DSs. Either
+all the information they need without burdening the data scientists.
+One of these things happens instead.
 
 - a basic self-serve system is fielded, which inevitably leads to follow-up
-questions outside of its scope. DSs are answering more questions than ever.
+questions outside of its scope. Data scientists are answering more questions than ever.
 - a complex self-serve system is fielded, which requires stakeholders to
 learn a querying language, like SQL or a simplified version of it.
-They don't, and DSs remain in the role of human user interface.
-- DSs get deep into building an intuitive, highly capable
-self-serve system. The project stope is large and they and aren't available
-to field query questions of any sort.
+They don't, and data scientists remain in the role of human user interface.
+- data scientists get deep into building an intuitive, highly capable
+self-serve system. The project scope is large and occupies all of their
+attention and is never quite finished.
+They aren't available to field query questions of any sort.
 
 ## Communicating uncertainty
 
 Statistics, the native language of the data scientist, is all about
 distributions. But decisions get made based on concrete values.
-A business decision-maker may have a rule of thumb in their head like
-“If the cost is less than three dollars, Buy it, otherwise pass”.
+A business decision maker may have a rule of thumb in their head like
+“If the cost is less than three dollars, buy it, otherwise pass”.
 So they ask a data scientist, how much it will cost.
 
 DS: About three and a half dollars.
@@ -326,7 +324,7 @@ nearly irreconcilable.
 
 If your audience is familiar with gambling, this gives some useful
 footholds like over-under and  odds ratios. Even better if they are
-familiar with rolling 20 sided dice. You can also try using percentages,
+familiar with rolling 20-sided dice. You can also try using percentages,
 statistical significance, confidence intervals, and upper/lower bounds,
 and see which you have the greatest success with.
 
@@ -336,7 +334,7 @@ building mental models of distributions.
 This conversation is a recurring one. Some version of it occurs with every
 analysis, and every decision. Bridging this gap well is what lets
 the hard work of a data science team carry maximum weight in the rest
-of the company. It has a high return on investment.
+of the company. Learning to do it well is well worth it.
 
 ## Building within-team consensus on how things are done
 
@@ -345,14 +343,14 @@ uncertainty consistently within themselves. New career data scientists
 are usually taught frequentist null hypothesis significance testing.
 The *p* &lt; .05 threshold is drilled into them as an axiom. As a rule
 of thumb it’s useful, but as an iron law, it is limiting.
-Another very useful thing a senior data scientist can do is help
+Another very useful thing a staff+ data scientist can do is help
 the rest of the team look past the *p*-value and consider the context
 of the decision. Talking through the cost of false positives and
 false negatives, the likely distribution of classes in practice,
 the opportunity cost of running long experiments in order to reach
 significance, alternative ways of evaluating distributions
 for decision-making. Helping the whole team to level up and to speak
-the same language naturally falls on the senior data scientist
+the same language naturally falls on the staff+ data scientist
 as a technical leader. 
 
 This work extends to coordinating definitions, tools, practices,
@@ -361,15 +359,15 @@ scientific freedom of allowing everyone to use the analyses, statistical
 tools, modeling techniciques, presentation formats, and feature definitions
 that they prefer, and the chaos that brings about. The larger the data
 science team, the greater the chaos. Setting norms for these,
-particularly across multiple organizations, is a big undtertaking and
-difficult to do in a way that doesn't feel heavy handed. Senior data
+particularly across multiple organizations, is a big undertaking and
+difficult to do in a way that doesn't feel heavy handed. Staff+ 
 data scientists that are able to pull this off are rare but their impact
 is huge.
 
 ## Collaboration with partner teams
 
 Data scientists work as a specialized piece of a larger machine.
-They rely on data analysts embedded in other teams, where they work with
+They work with
 data analysts to define data models and metric definitions. They work with
 data engineers to establish availability, freshness, data types, and
 standard transformations. They work with infrastructure engineers to make
@@ -380,11 +378,11 @@ important events are logged there as well and sometimes to pre-compute
 expensive features.
 
 Data scientists are part of an interconnected web and can only do what they do
-because of the other work that goes on around them, coordinating with
+because of the other work that goes on around them. Coordinating with
 these teams, supporting them in turn, keeping those communication
 lines open and trust high.
 
-## Designing a data science organization: Central vs distributed
+## Designing a data science organization: Centralized vs Distributed
 
 At a certain level of seniority in a small company, you may be asked to help
 grow a data science team from scratch. Once the product team and the
@@ -395,7 +393,14 @@ the analytics or the data engineering team. It is a recurring dilemma
 of central vs distributed data science teams.
 
 There is no right answer. Either can work *if* the organization is healthy
-and incentives are properly aligned.  If not than *neither* will work well.
+and incentives are properly aligned.  If not, than *neither* will work well.
+But all else being equal, a central data science team that works closely
+with other teams is the easiest to pull off. It's good for getting
+data scientists the support they need and building capabilities
+that are applicable across the company. It's natural to morph into a
+matrixed arrangement from there, where a data scientist reports to their
+DS manager, but attends a lot of team meetings with the specific team
+they are embedded with.
 
 
 ## Delivering Disappointing Results
@@ -408,4 +413,35 @@ surprising, disappointing, or uncomplimentary, they may push back,
 question assumptions, ask you to revisit it, suggest changes to the approach,
 or simply reject the result.
 
-TODO: complete this
+There's no one size fits all answer to this, but here are some things to
+watch out for.
+
+- Don't assume that the stakeholder will be persuaded by a rigorous and
+watertight analysis. They are balancing a lot of antagonistic concerns.
+Correctness is just one of them.
+- Don't assume that the stakeholder wants to know that real answer.
+Sometimes the incentives to believe a difference answer are just too
+compelling.
+- Don't assume that the stakeholder doesn't want to know the real answer.
+Pushback and follow up questions are a natural due diligence step.
+When a result is surprising and will require a lot of work to acknowledge, some
+questioning is appropriate.
+- Don't assume the stakeholder is questioning your capabilities, motives,
+or integrity.
+
+Processing difficult analyses is a conversation, not a homework assignment
+where you get to stick it to the professor. It works best when you approach
+the leader as another human being who has their own biases, fears, and
+goals. Talk it through. Expect to walk them through the numbers, re-run them,
+examing your assumptions, and run some follow up analyses. More times than I
+care to admit, these pushback sessions have exposed my blindspots and
+resulted in more nuanced conclusions. At the very least, give the stakeholders
+space to mourn their lost hopes.
+
+-----
+
+This list isn't exhaustive of course. Every company and team has its own
+personality. But it gives a general flavor of the the life of a staff+
+data scientist in 2026. Have I sold you on it?
+
+# TODO bright side
