@@ -130,7 +130,10 @@ In data science, this takes the form of understanding what people want,
 setting their expectations, and coordinating misaligned or competing incentives.
 Being familiar with sophisticated tools and approaches is definitely valuable,
 but is often something that a data scientist with a couple years of experience
-can do an excellent job on. It falls to staff+ data folks to navigate
+can do an excellent job on. As a staff+ you can still expect to tackle some
+of the most challenging or time-sensitive technical tasks, but those
+will probably not be the toughest part of your job.
+It falls to staff+ data folks to navigate
 the uncharted and shifting terrain of stakeholder management, cross-team
 coordination, and communication.
 (I'm using "staff+" to refer to staff level and higher, typically
@@ -444,4 +447,15 @@ This list isn't exhaustive of course. Every company and team has its own
 personality. But it gives a general flavor of the the life of a staff+
 data scientist in 2026. Have I sold you on it?
 
-# TODO bright side
+## The good bits are very very good
+
+With all of these sticky wickets, you might be wondering whether a
+career in data science is even worth it. What I haven’t mentioned yet
+is the upside, the marvelous feeling of being in the zone when your team
+is working together with other teams in synchrony, bridging the chasm
+between ones and zeros and the biggest decisions in the company.
+At the staff+ level, this is very similar to the Zen of a software engineer
+or a machine learning engineer who is in the zone, for all the same reasons.
+There’s nothing quite like it. It’s a satisfaction you feel somewhere
+deeply, somehwere just behind your sternum.
+You'll have to answer this question for yourself, but for me, yes, it’s worth it.
