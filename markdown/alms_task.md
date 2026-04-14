@@ -13,7 +13,7 @@ I’ll need some way to measure whether it got better.
 ## Inputs
 
 After the ALM has been trained, I’ll want to feed it text to proofread.
-To start with I’ll plan to do this through the simplest and clunliest way
+To start with I’ll plan to do this through the simplest and clunkiest way
 I can think of: passing it the path to a text file containing the text
 to be proofread. In an actual professional product built for users,
 this is probably not ideal, but it’s a nice generalizable front door
@@ -104,15 +104,119 @@ a **false positive**.
 - A ground truth error that is not overlapped by at least
 one model detected error will be considered a **false negative**.
 
-Recall will be defined as the total number of model-detected ground truth
+![Examples of true positives, false positives, and false negatives.
+](https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/errors_pos_neg.png)
+
+**Recall** will be defined as the total number of model-detected ground truth
 errors (true positives) over the total number of ground truth errors
 (true positives plus false negatives).
 
-Accuracy will be a total number of model-detected ground truth errors
+**Accuracy** will be a total number of model-detected ground truth errors
 (true positives) divided by the total number of true positives
 plus false positives. When there are no true positives or false positives,
 accuracy will be undefined.
 
 ## Creating the evaluation dataset
 
+Putting this into computer-readable form required creating a Python script
+with some error-ridden example text and the locations of the errors.
+I created
+[the initial set of evals for spelling errors](https://codeberg.org/brohrer/alms/src/commit/57294820c5035a0be140d54e7f07b6a470c31c7e/data/eval/spelling.py),
+but held off on creating evals for the other error types (punctiation,
+capitalization, etc.) for now.
+By the time you read this, there is a good chance it will already have evolved.
+If that's the case, you can find
+[the latest version here](https://codeberg.org/brohrer/alms/src/branch/main/data/eval/spelling.py).
+The evaluation dataset is a list of dicts, each of which contain a paragraph
+of text taken from a different chapter of Frankenstein which I modified to
+contain ten spelling mistakes. It also contains a list of ten
+dicts, each containing
 
+- the mis-spelled word
+- the index of its first and last character
+- the corrected version of the word
+
+Here's a snippet of the result
+
+```
+evaluation_dataset = [
+    {
+        'source': 'Frankenstein',
+        'chapter': 'L1',
+        'paragraph': """
+I am already far north of London, and as I walk in the streets of
+Petersburgh, I feel a cold northern breeze play upon my cheeks, which
+braces my nerves and fills me with delight. Do you understand this
+feeling? This breeze, which has travelled from the regions towards
+which I am advancing, gives me a foretaste of those icey climes.
+Inspirited by this wind of promise, my daydreams become more fervent
+and vivid. I try in vain to be persuaded that the pole is the seat of
+frost and desolation; it ever presents itself to my imagniation as the
+region of beauty and delight. There, Margaret, the sun is for ever
+visible, its broad disk just skirting the horizon and diffusing a
+perpettual splendour. There—for with your leave, my sister, I will put
+...
+requisite; or by ascertaining the secret of the magnet, which, if at
+all possible, can only be effected by an undertaking such as mine.
+                """,
+        'mistakes': [
+            {
+                'first_char': 322,
+                'last_char': 325,
+                'wrong_text': 'icey',
+                'correct_text': 'icy',
+            },
+            {
+                'first_char': 526,
+                'last_char': 536,
+                'wrong_text': 'imagniation',
+                'correct_text': 'imagination',
+            },
+            {
+                'first_char': 678,
+                'last_char': 687,
+                'wrong_text': 'perpettual',
+                'correct_text': 'perpetual',
+            },
+            ...
+        ]
+    },
+]
+```
+
+## End-to-end prototyping
+
+It’s fair to ask why I don’t go ahead and complete the evaluation datasets
+for the other types of errors. It seems logical to completely finish this
+step before moving onto the next. We can imagine this as a breadth-first
+solution to the problem, thoroughly working through one stage of development,
+putting some polish on it before moving to the next. When this work is
+spread across teams, this is called waterfall style development. One team
+completes a whole stage of the project like design or backend support
+before passing it onto the next.
+
+The alternative to this is a depth-first development strategy.
+Building a bare bones end-to-end solution and then adding breadth and
+sophistication to it in subsequent passes. Starting with an end-to-end
+prototype means leaving a lot of things incomplete in the first pass.
+It means creating something that you would be embarrassed to show to
+your friends. If you’re working across multiple teams, it means a whole lot
+more communication up front.
+
+In theory, both of these approaches are valid and will produce a good result
+in similar timeframes. But in practice, they don’t. The waterfall approach
+assumes that all of the work done at each stage gets to remain in its
+final form. In fact, every additional stage teaches us things we didn’t
+know about what needed to come before. This requires a lot of rework on
+stages that we had previously thought were complete. In an end-to-end
+prototyping approach this rework happens quickly. The whole project has
+a lot less momentum and can pivot more gracefully. It is more agile.
+
+This lesson can take a long time to learn, and in some cases, it is in
+managers' interest to ignore it, depending on the incentives of
+the organization. But since I am all of the engineering teams and all
+of the levels of management for this project I get to decide:
+We’re going to start with a lightweight end-to-end prototype.
+
+So now that the spelling evals are done, onto the next stage---building a
+model to detect misspelled words. 

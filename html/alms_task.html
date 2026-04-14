@@ -2,7 +2,7 @@
 <html>
 
   <script type="text/javascript">var blog_title = "Giving the Artisanal Language Model a job";</script>
-  <script type="text/javascript">var publication_date = "February 23, 2026";</script>
+  <script type="text/javascript">var publication_date = "April 14, 2026";</script>
   <head>
     <link rel="icon" href="images/ml_logo.png">
     <meta charset='utf-8'>
@@ -37,7 +37,7 @@ I’ll need some way to measure whether it got better.
 
 <p>
 After the ALM has been trained, I’ll want to feed it text to proofread.
-To start with I’ll plan to do this through the simplest and clunliest way
+To start with I’ll plan to do this through the simplest and clunkiest way
 I can think of: passing it the path to a text file containing the text
 to be proofread. In an actual professional product built for users,
 this is probably not ideal, but it’s a nice generalizable front door
@@ -119,26 +119,173 @@ discover new categories that aren’t getting picked up well.
 But they are a good place to start.
 </p>
 
-<h2><a id="Creating-evals-for-each-category."></a><a href="#Creating-evals-for-each-category.">Creating evals for each category.</a></h2>
+<h2><a id="Creating-evals-for-each-category"></a><a href="#Creating-evals-for-each-category">Creating evals for each category</a></h2>
 
 <p>
-In practice, to test how well a given language model performs in these areas, I’ll need to create an evaluation data set. For each of the areas above, I’ll pull five paragraphs arbitrarily from an evaluation text (Frankenstein by Mary  Bysshe Shelly) And throw 10 errors into the text of a given type. Having five paragraphs full of spelling errors gives a total of 50 spelling errors to detect. Each paragraph will come with its own answer key, the beginning and end of each word or phrase containing the error. After the proofreading model processes, the paragraph, the errors it detects will be compared against the ground truth.
+In practice, to test how well a given language model performs in each of
+these areas, I’ll need to create an evaluation data set. For each of the
+areas above, I’ll pull five paragraphs arbitrarily from an evaluation text
+(Frankenstein by Mary Wollstonecraft (Godwin) Shelley) and throw 10 errors into
+the text of a given type. Having five paragraphs full of spelling errors
+gives a total of 50 spelling errors to detect. Each paragraph will come
+with its own answer key, the beginning and end of each word or phrase
+containing the error. After the proofreading model processes the paragraph,
+the errors it detects will be compared against the ground truth.
+</p>
+
+<ul>
+<li> A ground truth error that is overlapped by at least one model detected-error
+is considered detected (<strong>true positive</strong>). This is not quite the same thing as</li>
+<li> A model-detected error that overlaps at least
+one ground truth error. This is considered an accurate detection, but there
+may be several of these per ground truth error. I can't use this as the
+true positive count because it could result in inflated counts.</li>
+<li> A model-detected
+error that doesn’t overlap a ground truth error will be considered
+a <strong>false positive</strong>.</li>
+<li> A ground truth error that is not overlapped by at least
+one model detected error will be considered a <strong>false negative</strong>.</li>
+</ul>
+
+<p>
+<img alt="Examples of true positives, false positives, and false negatives.
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/errors_pos_neg.png">
 </p>
 
 <p>
-A ground truth, error that is overlapped by at least one model detected error is considered detected. A model detected error that overlaps at least one ground truth. Error is considered an accurate detection. A model detected error that doesn’t overlap a ground truth error will be considered a false positive. A ground truth error that is not overlapped by at least one model detected error will be considered a false negative.
+<strong>Recall</strong> will be defined as the total number of model-detected ground truth
+errors (true positives) over the total number of ground truth errors
+(true positives plus false negatives).
 </p>
 
 <p>
-Recall will be defined as the total number of detected ground truth errors over the total number of ground true errors.
+<strong>Accuracy</strong> will be a total number of model-detected ground truth errors
+(true positives) divided by the total number of true positives
+plus false positives. When there are no true positives or false positives,
+accuracy will be undefined.
+</p>
+
+<h2><a id="Creating-the-evaluation-dataset"></a><a href="#Creating-the-evaluation-dataset">Creating the evaluation dataset</a></h2>
+
+<p>
+Putting this into computer-readable form required creating a Python script
+with some error-ridden example text and the locations of the errors.
+I created
+<a href="https://codeberg.org/brohrer/alms/src/commit/57294820c5035a0be140d54e7f07b6a470c31c7e/data/eval/spelling.py">the initial set of evals for spelling errors</a>,
+but held off on creating evals for the other error types (punctiation,
+capitalization, etc.) for now.
+By the time you read this, there is a good chance it will already have evolved.
+If that's the case, you can find
+<a href="https://codeberg.org/brohrer/alms/src/branch/main/data/eval/spelling.py">the latest version here</a>.
+The evaluation dataset is a list of dicts, each of which contain a paragraph
+of text taken from a different chapter of Frankenstein which I modified to
+contain ten spelling mistakes. It also contains a list of ten
+dicts, each containing
+</p>
+
+<ul>
+<li> the mis-spelled word</li>
+<li> the index of its first and last character</li>
+<li> the corrected version of the word</li>
+</ul>
+
+<p>
+Here's a snippet of the result
 </p>
 
 <p>
-Accuracy will be a total number of ground truth errors detected divided by the total number of false negatives plus The number of ground truth errors detected.
+<pre>
+evaluation_dataset = [
+    {
+        'source': 'Frankenstein',
+        'chapter': 'L1',
+        'paragraph': """
+I am already far north of London, and as I walk in the streets of
+Petersburgh, I feel a cold northern breeze play upon my cheeks, which
+braces my nerves and fills me with delight. Do you understand this
+feeling? This breeze, which has travelled from the regions towards
+which I am advancing, gives me a foretaste of those icey climes.
+Inspirited by this wind of promise, my daydreams become more fervent
+and vivid. I try in vain to be persuaded that the pole is the seat of
+frost and desolation; it ever presents itself to my imagniation as the
+region of beauty and delight. There, Margaret, the sun is for ever
+visible, its broad disk just skirting the horizon and diffusing a
+perpettual splendour. There—for with your leave, my sister, I will put
+...
+requisite; or by ascertaining the secret of the magnet, which, if at
+all possible, can only be effected by an undertaking such as mine.
+                """,
+        'mistakes': [
+            {
+                'first_char': 322,
+                'last_char': 325,
+                'wrong_text': 'icey',
+                'correct_text': 'icy',
+            },
+            {
+                'first_char': 526,
+                'last_char': 536,
+                'wrong_text': 'imagniation',
+                'correct_text': 'imagination',
+            },
+            {
+                'first_char': 678,
+                'last_char': 687,
+                'wrong_text': 'perpettual',
+                'correct_text': 'perpetual',
+            },
+            ...
+        ]
+    },
+]
+</pre>
+</p>
+
+<h2><a id="End-to-end-prototyping"></a><a href="#End-to-end-prototyping">End-to-end prototyping</a></h2>
+
+<p>
+It’s fair to ask why I don’t go ahead and complete the evaluation datasets
+for the other types of errors. It seems logical to completely finish this
+step before moving onto the next. We can imagine this as a breadth-first
+solution to the problem, thoroughly working through one stage of development,
+putting some polish on it before moving to the next. When this work is
+spread across teams, this is called waterfall style development. One team
+completes a whole stage of the project like design or backend support
+before passing it onto the next.
 </p>
 
 <p>
-Precision will be
+The alternative to this is a depth-first development strategy.
+Building a bare bones end-to-end solution and then adding breadth and
+sophistication to it in subsequent passes. Starting with an end-to-end
+prototype means leaving a lot of things incomplete in the first pass.
+It means creating something that you would be embarrassed to show to
+your friends. If you’re working across multiple teams, it means a whole lot
+more communication up front.
+</p>
+
+<p>
+In theory, both of these approaches are valid and will produce a good result
+in similar timeframes. But in practice, they don’t. The waterfall approach
+assumes that all of the work done at each stage gets to remain in its
+final form. In fact, every additional stage teaches us things we didn’t
+know about what needed to come before. This requires a lot of rework on
+stages that we had previously thought were complete. In an end-to-end
+prototyping approach this rework happens quickly. The whole project has
+a lot less momentum and can pivot more gracefully. It is more agile.
+</p>
+
+<p>
+This lesson can take a long time to learn, and in some cases, it is in
+managers' interest to ignore it, depending on the incentives of
+the organization. But since I am all of the engineering teams and all
+of the levels of management for this project I get to decide:
+We’re going to start with a lightweight end-to-end prototype.
+</p>
+
+<p>
+So now that the spelling evals are done, onto the next stage&mdash;building a
+model to detect misspelled words. 
 </p>
 
         <script src="javascripts/blog_signature.js"></script>
