@@ -4,6 +4,294 @@
 <link>https://www.brandonrohrer.com</link>
 <description>Brandon Rohrer's blog</description>
 
+            
+
+  <item>
+    <title>
+    Artisanal Language Models: Define a task and write evals
+    </title>
+    <link>
+    https://brandonrohrer.org/alms_task.html
+    </link>
+    <pubDate>
+    Tue, 14 Apr 2026 08:36:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.org/alms_task.html
+    </guid>
+    <description><![CDATA[
+<p>
+A defining feature of an ALM is that it is purpose built for a well-defined
+task. So far the task has only been described in general terms: proofreading
+English prose of a novel draft.
+</p>
+
+<p>
+It’s time to get more specific about what this ALM will do, what
+its inputs and outputs will be, so that I can actually start building it.
+It’s also time to define some tests and performance measures.
+I’ll need them when I have something running and I make a change;
+I’ll need some way to measure whether it got better.
+</p>
+
+<h2><a id="Inputs"></a><a href="#Inputs">Inputs</a></h2>
+
+<p>
+After the ALM has been trained, I’ll want to feed it text to proofread.
+To start with I’ll plan to do this through the simplest and clunkiest way
+I can think of: passing it the path to a text file containing the text
+to be proofread. In an actual professional product built for users,
+this is probably not ideal, but it’s a nice generalizable front door
+that slicker user interfaces can be built around in the future.
+</p>
+
+<h2><a id="Outputs"></a><a href="#Outputs">Outputs</a></h2>
+
+<p>
+After the proofreader has done its job and identified segments that might
+need correction, those segments will be reported as positions in
+the input text. Specifically, when the text file is read in as a string,
+the index of starting character position and ending character will be used
+to tag segments for inspection and correction.
+Position of the suspected error will be reported as a pair of indices.
+This collection of start/finish pairs will be the output of the proofreader.
+</p>
+
+<p>
+There are a lot of other things that could be enhanced about this to provide
+a good user experience, and I leave the door open to add those later.
+For instance, the text file could be modified to include special characters
+marking the suspect segments. Or a fancier graphical UI could simply
+highlight the potential errors or underline them, as is common in
+word processors. An even fancier extension could propose corrections
+and offer the user a single keystroke way to select from a number
+of suggestions. But all of these could be built on top of a pair of
+start and end markers for each proofreading note.
+</p>
+
+<h2><a id="Evaluation"></a><a href="#Evaluation">Evaluation</a></h2>
+
+<p>
+I’ll need a way to evaluate the progress. If I try to enhance my
+proofreading model, how will I know if it worked? The variety
+of all possible text to be proofread is so large, it’s impossible to test
+every variation exhaustively. The best I can hope to do is come up with is
+a representative sample.
+</p>
+
+<p>
+This falls somewhere in between the traditional software engineering practice
+of testing, where the notion of right and wrong answers and what a function
+must do is fairly clean cut, and bench marking, which is a consensus
+driven measure for comparing solutions in a broadly recognized way.
+It’s what has come to be known in LLM development as evaluations or,
+more affectionately, <strong>evals</strong>.
+Evals are a reasonable sample of the space in which a language model
+is expected to work. They lack the recognition and respect has
+a full-blown benchmark, and also lack the rigor and confidence of carefully
+designed tests. But despite having the worst of both worlds,
+evals operate in a space that we cannot ignore, and for which there is
+no better solution that I know of.
+</p>
+
+<p>
+In practice, evals are organic. They grow to cover new use cases
+and new failure modes during the development process. But it’s helpful
+think through a reasonable initial set. For proofreading there
+are several classes of errors that are important to cover.
+</p>
+
+<ul>
+<li> <strong>Spelling</strong>. Febuary. Febrewary. Februry. Fabuwary.</li>
+<li> <strong>Word choice</strong>. Catching when it should be "imply" and when it should be "infer".
+To/two/too. There/their/they're.</li>
+<li> <strong>Punctuation</strong>. Appropriate sentence termination. Comma usage.
+Quotation mark usage.</li>
+<li> <strong>White space</strong>. Extra spaces. Spaces around punctuation. Weird indents.</li>
+<li> <strong>Capitalization</strong>.</li>
+<li> <strong>Grammar</strong>. Verb tense. Pronoun-antecedent agreement.
+Preposition choice.</li>
+</ul>
+
+<p>
+These aren’t exhaustive, but there’s no need for evals to be exhaustive
+in order to be useful. I will almost certainly add more later as I
+discover new categories that aren’t getting picked up well.
+But they are a good place to start.
+</p>
+
+<h2><a id="Creating-evals-for-each-category"></a><a href="#Creating-evals-for-each-category">Creating evals for each category</a></h2>
+
+<p>
+In practice, to test how well a given language model performs in each of
+these areas, I’ll need to create an evaluation data set. For each of the
+areas above, I’ll pull five paragraphs arbitrarily from an evaluation text
+(Frankenstein by Mary Wollstonecraft (Godwin) Shelley) and throw 10 errors into
+the text of a given type. Having five paragraphs full of spelling errors
+gives a total of 50 spelling errors to detect. Each paragraph will come
+with its own answer key, the beginning and end of each word or phrase
+containing the error. After the proofreading model processes the paragraph,
+the errors it detects will be compared against the ground truth.
+</p>
+
+<ul>
+<li> A ground truth error that is overlapped by at least one model detected-error
+is considered detected (<strong>true positive</strong>). This is not quite the same thing as</li>
+<li> A model-detected error that overlaps at least
+one ground truth error. This is considered an accurate detection, but there
+may be several of these per ground truth error. I can't use this as the
+true positive count because it could result in inflated counts.</li>
+<li> A model-detected
+error that doesn’t overlap a ground truth error will be considered
+a <strong>false positive</strong>.</li>
+<li> A ground truth error that is not overlapped by at least
+one model detected error will be considered a <strong>false negative</strong>.</li>
+</ul>
+
+<p>
+<img alt="Examples of true positives, false positives, and false negatives.
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/errors_pos_neg.png">
+</p>
+
+<p>
+<strong>Recall</strong> will be defined as the total number of model-detected ground truth
+errors (true positives) over the total number of ground truth errors
+(true positives plus false negatives).
+</p>
+
+<p>
+<strong>Accuracy</strong> will be a total number of model-detected ground truth errors
+(true positives) divided by the total number of true positives
+plus false positives. When there are no true positives or false positives,
+accuracy will be undefined.
+</p>
+
+<h2><a id="Creating-the-evaluation-dataset"></a><a href="#Creating-the-evaluation-dataset">Creating the evaluation dataset</a></h2>
+
+<p>
+Putting this into computer-readable form required creating a Python script
+with some error-ridden example text and the locations of the errors.
+I created
+<a href="https://codeberg.org/brohrer/alms/src/commit/57294820c5035a0be140d54e7f07b6a470c31c7e/data/eval/spelling.py">the initial set of evals for spelling errors</a>,
+but held off on creating evals for the other error types (punctiation,
+capitalization, etc.) for now.
+By the time you read this, there is a good chance it will already have evolved.
+If that's the case, you can find
+<a href="https://codeberg.org/brohrer/alms/src/branch/main/data/eval/spelling.py">the latest version here</a>.
+The evaluation dataset is a list of dicts, each of which contain a paragraph
+of text taken from a different chapter of Frankenstein which I modified to
+contain ten spelling mistakes. It also contains a list of ten
+dicts, each containing
+</p>
+
+<ul>
+<li> the mis-spelled word</li>
+<li> the index of its first and last character</li>
+<li> the corrected version of the word</li>
+</ul>
+
+<p>
+Here's a snippet of the result
+</p>
+
+<p>
+<pre>
+evaluation_dataset = [
+    {
+        'source': 'Frankenstein',
+        'chapter': 'L1',
+        'paragraph': """
+I am already far north of London, and as I walk in the streets of
+Petersburgh, I feel a cold northern breeze play upon my cheeks, which
+braces my nerves and fills me with delight. Do you understand this
+feeling? This breeze, which has travelled from the regions towards
+which I am advancing, gives me a foretaste of those icey climes.
+Inspirited by this wind of promise, my daydreams become more fervent
+and vivid. I try in vain to be persuaded that the pole is the seat of
+frost and desolation; it ever presents itself to my imagniation as the
+region of beauty and delight. There, Margaret, the sun is for ever
+visible, its broad disk just skirting the horizon and diffusing a
+perpettual splendour. There—for with your leave, my sister, I will put
+...
+requisite; or by ascertaining the secret of the magnet, which, if at
+all possible, can only be effected by an undertaking such as mine.
+                """,
+        'mistakes': [
+            {
+                'first_char': 322,
+                'last_char': 325,
+                'wrong_text': 'icey',
+                'correct_text': 'icy',
+            },
+            {
+                'first_char': 526,
+                'last_char': 536,
+                'wrong_text': 'imagniation',
+                'correct_text': 'imagination',
+            },
+            {
+                'first_char': 678,
+                'last_char': 687,
+                'wrong_text': 'perpettual',
+                'correct_text': 'perpetual',
+            },
+            ...
+        ]
+    },
+]
+</pre>
+</p>
+
+<h2><a id="End-to-end-prototyping"></a><a href="#End-to-end-prototyping">End-to-end prototyping</a></h2>
+
+<p>
+It’s fair to ask why I don’t go ahead and complete the evaluation datasets
+for the other types of errors. It seems logical to completely finish this
+step before moving onto the next. We can imagine this as a breadth-first
+solution to the problem, thoroughly working through one stage of development,
+putting some polish on it before moving to the next. When this work is
+spread across teams, this is called waterfall style development. One team
+completes a whole stage of the project like design or backend support
+before passing it onto the next.
+</p>
+
+<p>
+The alternative to this is a depth-first development strategy.
+Building a bare bones end-to-end solution and then adding breadth and
+sophistication to it in subsequent passes. Starting with an end-to-end
+prototype means leaving a lot of things incomplete in the first pass.
+It means creating something that you would be embarrassed to show to
+your friends. If you’re working across multiple teams, it means a whole lot
+more communication up front.
+</p>
+
+<p>
+In theory, both of these approaches are valid and will produce a good result
+in similar timeframes. But in practice, they don’t. The waterfall approach
+assumes that all of the work done at each stage gets to remain in its
+final form. In fact, every additional stage teaches us things we didn’t
+know about what needed to come before. This requires a lot of rework on
+stages that we had previously thought were complete. In an end-to-end
+prototyping approach this rework happens quickly. The whole project has
+a lot less momentum and can pivot more gracefully. It is more agile.
+</p>
+
+<p>
+This lesson can take a long time to learn, and in some cases, it is in
+managers' interest to ignore it, depending on the incentives of
+the organization. But since I am all of the engineering teams and all
+of the levels of management for this project I get to decide:
+We’re going to start with a lightweight end-to-end prototype.
+</p>
+
+<p>
+So now that the spelling evals are done, onto the next stage&mdash;building a
+model to detect misspelled words.
+</p>
+
+    ]]></description>
+  </item>
+
   <item>
     <title>
     Blog Highlights
