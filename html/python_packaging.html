@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Python packaging with uv";</script>
+  <script type="text/javascript">var publication_date = "April 17, 2026";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+For a long time, every time I needed to create a new project or
+Python package I copied an existing repository. It worked pretty well, but
+never perfectly. It always felt like I was wearing someone else’s shoes.
+And then when I went to make changes, I realized quickly how little I
+understood about how projects, builds, and distributions work.
+</p>
+
+<p>
+Here are some questions that I’ve had and some answers I've found.
+They focus on the uv toolset of environment management and packaging.
+This post doesn’t say anything about setuptools, even though setuptools,
+setup.py, and setup.cfg 
+are still present in a lot of well-built projects, especially pre-2025 ones.
+</p>
+
+<p>
+I expect this list of questions to grow and evolve over time as I learn.
+My primary audience is a clueless future me, but I hope it helps you too.
+</p>
+
+<h2><a id="How-do-I-name-projects?-Packages?-Modules?-Repositories?"></a><a href="#How-do-I-name-projects?-Packages?-Modules?-Repositories?">How do I name projects? Packages? Modules? Repositories?</a></h2>
+
+<p>
+As the saying goes, naming things is one of the hardest problems in
+computer science. This is particularly true when it comes to packaging.
+There are a lot of different entities to be named, and it’s unclear sometimes
+what names belong to which. There is a repository name, a top level directory
+name, a project name, and a package name. All of these can be different.
+For extra confusion, they can get confused with module names and function
+names as well.
+</p>
+
+<p>
+The Python interpreter and build tools have no problem knowing whether
+a particular name is supposed to reference the project or the package.
+They determine this from context. For human brains, especially the ones
+new to packaging,
+this can be a lot to keep track of. To save yourself unnecessary hassle,
+a good trick is to use the same name for all these things. A brief,
+memorable, all-lowercase name is ideal. The one way in which these names
+will differ is in how they handle multiword names. For project, repository,
+and top level directory names, separate words with a hyphen, as in
+<code>my-amazing-tool</code>. For Python
+packages and modules separate multiple words with an underscore, for example
+<code>my_amazing_tool</code>. This keeps
+things consistent with the conventions of the various tools and communities. 
+</p>
+
+<p>
+But don’t worry too much if you feel the need to deviate from this.
+Plenty of smart people have differing opinions and it’s a matter
+of convention only.
+The <a href="https://peps.python.org/pep-0008/#package-and-module-names">PEP 8 recommendation</a>
+is to give packages single-word names, without underscores, but this can
+be challenging to do in a readable way.  Everyone ignores this.
+</p>
+
+<p>
+If you plan to distribute it publically on <a href="PyPI">https://pypi.org</a>,
+check it first to make sure the package name isn't already taken.
+</p>
+
+<h2><a id="What-are-wheels-and-sdists?"></a><a href="#What-are-wheels-and-sdists?">What are wheels and sdists?</a></h2>
+
+<p>
+An sdist is a <em>source distribution</em> and a wheel is a <em>binary distribution</em>.
+I have no idea why it's called a wheel. Source is the code itself&mdash;<code>.py</code>
+files and their supporting cast. It comes in a single <code>.tar.gz</code> archive
+which has to be unzipped with <code>tar -xvf</code> before it can be properly read.
+<a href="https://packaging.python.org/en/latest/discussions/package-formats/#what-is-a-source-distribution">Detail on sdists here.</a>
+</p>
+
+<p>
+The wheel is the compiled version of the source, containing
+only the files needed to actually run the code. Because compilation
+is platform specific, a wheel is tied to a particular operating system,
+processor architecture, and Python version. A single project can have many
+wheels if it's meant to be run on many platforms and architectures.
+The big caveat here is that Python files don't get pre-built into binaries.
+The local Python interpreter does that at runtime. So if it's a purely Python
+package, then one wheel is usually sufficient for all platforms and OS's.
+<a href="https://packaging.python.org/en/latest/discussions/package-formats/#what-is-a-wheel">Detail on wheels here.</a>
+</p>
+
+<h2><a id="What-are-build-tools-and-why-do-they-matter?"></a><a href="#What-are-build-tools-and-why-do-they-matter?">What are build tools and why do they matter?</a></h2>
+
+<p>
+Build tools do the work of taking the original files and the information
+from <code>pyproject.toml</code> and using them as ingredients for building
+the sdist and the wheel.
+</p>
+
+<p>
+There are two parts to this, a build frontend and a build backend. For the
+purposes of this post, the frontend is
+<a href="https://docs.astral.sh/uv/concepts/projects/build/#using-uv-build">uv build</a>
+it does some gathering and interpretation of the files and prepares them
+for the next step. pip and build are other popular build frontends.
+</p>
+
+<p>
+There are a few common build backend tools, including hatchling, setuptools,
+and uv's own uv_build.
+<a href="https://pydevtools.com/handbook/explanation/what-is-a-build-backend/#choosing-a-backend">Here's a short guide</a>
+for choosing between them, but when in doubt hatchling is a good choice.
+The backend needs to be called out in pyproject.toml
+<a href="https://pydevtools.com/handbook/explanation/what-is-a-build-backend/#how-the-frontend-finds-the-backend">like this</a>
+</p>
+
+<p>
+<pre>
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+</pre>
+</p>
+
+<p>
+<a href="https://packaging.python.org/en/latest/tutorials/packaging-projects/#choosing-a-build-backend">Here are some examples</a>
+for the other backends as well.
+</p>
+
+<h2><a id="Why-have-a-<code>src</code>-directory?"></a><a href="#Why-have-a-<code>src</code>-directory?">Why have a <code>src</code> directory?</a></h2>
+
+<p>
+There are two common patterns for organizing projects
+<a href="https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/#src-layout-vs-flat-layout">flat and src layouts</a>.
+</p>
+
+<p>
+A flat layout is intuitive. The package code sits at the top level of the
+project and is more straightforward to access. But because of how imports work
+it's easy to lose track of whether your other code, like tests, are
+referencing the working copy of your code in the project or a previously
+installed version of the package. It can result in maddening bugs.
+</p>
+
+<p>
+A src layout alleviates this. Because the package sits one level lower,
+it's not so easily reachable for direct import. Any import would need
+an installed version of the package. Using an editable install makes
+sure that your most recent changes to the code are what is run.
+</p>
+
+<p>
+The src layout gives the benefit of protecting us from ourselves
+a bit more. And it comes at the cost of a slightly more complex file
+structure and an extra step to ensure an editable install.
+</p>
+
+<h2><a id="How-do-I-make-a-package-visible-across-the-project?"></a><a href="#How-do-I-make-a-package-visible-across-the-project?">How do I make a package visible across the project?</a></h2>
+
+<p>
+To make a package a visible from other locations in a project
+that are outside the package directories, for instance in <code>tests/</code>,
+the most reliable way is to do an editable install.
+From within the top level directory of the project run
+</p>
+
+<p>
+<code>uv pip install -e .</code>
+</p>
+
+<p>
+Modules outside your package shouldn't need <code>__init__.py</code> files
+in each directory. But now they will be able to <code>import mypackage</code>
+and go to town.
+</p>
+
+<p>
+Note that it's also totally valid to include <code>tests\</code> within the
+package. In that case they will very much need their <code>__init__.py</code>
+files. More detail in
+<a href="https://docs.pytest.org/en/latest/explanation/goodpractices.html">pytest best practices</a>.
+</p>
+
+<h2><a id="How-do-I-add-other-file-types-to-the-package?-And-how-do-I-access-them-from-the-code?"></a><a href="#How-do-I-add-other-file-types-to-the-package?-And-how-do-I-access-them-from-the-code?">How do I add other file types to the package? And how do I access them from the code?</a></h2>
+
+<p>
+The easiest way is to include them under the package directory tree.
+By default, hatchling includes in the sdist any non-Python files under
+the <code>mypackage</code> directory that are not in
+<code>.gitignore</code>. This behavior can be aribitrarily modified for both
+types of build targets, sdists and wheels.
+<a href="https://hatch.pypa.io/1.16/config/build/#file-selection">Examples here.</a>
+They can be instructed to include files from outside the project as well.
+</p>
+
+<p>
+From within the code, these files can be accessed by their absolute path
+The <code>__file__</code> attribute gives the absolute path of a given module.
+It can the be modified to point to the data instead. For example for this
+structure
+</p>
+
+<p>
+<pre>
+myproject
+├── pyproject.toml
+└── src
+    └── mypackage
+        ├── __init__.py
+        ├── mymodule.py
+        └── data 
+            └── mydata.json
+</pre>
+</p>
+
+<p>
+within <code>mymodule</code>
+</p>
+
+<p>
+<pre>import os<br>
+mymodule_abspath = __file__
+mydata_abspath = os.path.join(mymodule_abspath, 'data')
+mydata_absfilename = os.path.join(mydata_abspath, 'mydata.json')
+with open(mydata_absfilename, 'rt') as f:
+    mydata = f.read()
+</pre>    
+</p>
+
+<h2><a id="What-goes-into-<code>pyproject.toml</code>?"></a><a href="#What-goes-into-<code>pyproject.toml</code>?">What goes into <code>pyproject.toml</code>?</a></h2>
+
+<p>
+While <code>pyproject.toml</code> files are powerful and flexible and can be quite long,
+<a href="https://www.pyopensci.org/python-package-guide/package-structure-code/pyproject-toml-python-package-metadata.html">a minimal pyproject.toml</a>
+contains just some basic project and build system information, like this.
+</p>
+
+<p>
+<pre>
+[build-system]
+requires = ['hatchling']
+build-backend = "hatchling.build"<br>
+[project]
+name = 'myproject'
+version = '0.1.0'
+</pre>
+</p>
+
+<p>
+There are some other
+<a href="https://www.pyopensci.org/python-package-guide/package-structure-code/pyproject-toml-python-package-metadata.html#optional-fields-to-include-in-the-project-table">commonly used fields</a>
+for the <code>project</code> table, including description, license, authors, and
+keywords. project-dependencies will list other packages that yours depends on.
+The classifiers field gives a set of standard tags that can help humans
+and software tools alike make better use of your package.
+<a href="https://pypi.org/classifiers/">The full list of classifiers</a> is lengthy,
+but some especially helpful ones are
+</p>
+
+<ul>
+<li> Development Status</li>
+<li> Intended Audience</li>
+<li> Topic</li>
+<li> Programming language</li>
+</ul>
+
+<h2><a id="Resources"></a><a href="#Resources">Resources</a></h2>
+
+<p>
+These are the references that I find most useful when answering these
+questions.
+</p>
+
+<ul>
+<li> <a href="https://packaging.python.org/en/latest/">python.org packaging</a></li>
+<li> <a href="https://docs.astral.sh/uv/concepts/projects/">uv project configuration</a></li>
+<li> <a href="https://pydevtools.com/handbook/explanation/what-is-a-build-frontend/">build frontends</a></li>
+<li> <a href="https://pydevtools.com/handbook/explanation/what-is-a-build-backend/">build backends</a></li>
+<li> <a href="https://hatch.pypa.io/1.16/config/build/">hatch configuration</a></li>
+<li> <a href="https://www.pyopensci.org/python-package-guide/package-structure-code/pyproject-toml-python-package-metadata.html">pyproject.toml configuration</a></li>
+</ul>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>
