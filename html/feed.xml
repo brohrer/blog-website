@@ -4,7 +4,261 @@
 <link>https://www.brandonrohrer.com</link>
 <description>Brandon Rohrer's blog</description>
 
+  <item>
+    <title>
+    Artisanal Language Models: Build an end-to-end v0 prototype
+    </title>
+    <link>
+    https://brandonrohrer.org/alms_end_to_end.html
+    </link>
+    <pubDate>
+    Thu, 30 Apr 2026 08:36:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.org/alms_end_to_end.html
+    </guid>
+    <description><![CDATA[
             
+
+
+<p>
+When building an initial prototype, its only purpose is to exist,
+to hold space, to help us think through how everything fits together.
+The worse the performance, the better. It serves as a rock bottom baseline
+against which we can measure all future improvements.
+</p>
+
+<p>
+That means that it isn’t important to think about making the individual
+pieces work well, but it <em>is</em> important to think about how they fit
+together and make sure they work together smoothly. It’s more about
+defining structure and interfaces than anything else.
+</p>
+
+<h2><a id="The-process"></a><a href="#The-process">The process</a></h2>
+
+<p>
+It wasn’t pretty. Directories got created, renamed, moved, moved back,
+and deleted. Functions that were in one module got moved to another.
+Modules got combined and split. The layout of the tests changed three times
+and I’m still not entirely happy with it. During the process, I realized
+how little I understood what a well structured package should look like
+and took a detour to write myself
+<a href="https://brandonrohrer.org/python_packaging.html">this guide</a>.
+This is all somewhat normal for creating a new project,
+but it’s important to note that the
+project wasn’t born
+<a href="https://codeberg.org/brohrer/proofread-eng-scifi">looking this way</a>.
+It evolved.
+</p>
+
+<p>
+<img alt="Project structure for proofread-eng-scifi
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/project_structure.png">
+</p>
+
+<h2><a id="The-structure"></a><a href="#The-structure">The structure</a></h2>
+
+<p>
+The resulting project repository is built around
+<a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi">the package code</a>
+at<code>src/proofread_eng_scifi</code>.
+Outside the main package code, there is a <code>data</code> directory with a copy of
+the complete training data and an <code>eval</code> directory with the evaluation code.
+At the moment, all of the tests are low level unit tests, and are scattered
+throughout the package directories to be as close as possible to the modules
+they are testing. For a small project like this, it’s not a burden to
+include them in the package distribution. Saving the extra step of
+navigating through the directory tree to find them is a nice convenience.
+</p>
+
+<p>
+The package code itself consist of proofreading modules at the top level
+(<code>proof_00.py</code>, <code>proof_01.py</code>) which provide entry points to running
+the proofreader, and subdirectories for tests and models. I decided to go
+with a clunky, explicitly numbered versioning approach:
+<code>filename_01</code>, <code>filename_02</code>, etc. This makes it
+straightforward to manage which versions of which components are being used.
+This approach would get messy if it were a large codebase but again, since
+it’s so small, we can get away with it.
+</p>
+
+<p>
+The <code>models</code> directory currently contains the <code>tokenizer</code> model and the
+<code>random</code> language model. The tokenizer,
+<a href="https://brandonrohrer.org/alms_tokenizer.html">discussed previously</a>,
+breaks the text into discrete pieces and numbers them. It also has numbered
+versions as well as a short script to train each version.
+</p>
+
+<p>
+The random language model provides an extremely rough baseline against which
+future models can be measured. It randomly "estimates" the probability of
+each token occurring. These are all nonsense estimates, but they have
+the right shape to be used in our version 01 proofreader prototype.
+</p>
+
+<p>
+Returning to the proofreader modules, version 01 is the one that uses the
+random language model. It uses a command line interface where the name
+of the text file to be proofread is supplied, for example
+</p>
+
+<p>
+<pre>
+uv run proof_01.py to_be_proofread.txt
+</pre>
+</p>
+
+<p>
+Then it returns a list of detected errors together with their
+character positions in the original text file. This again illustrates
+the "start with something horrible and make it better later" approach.
+It’s clearly inadequate from a user interface perspective, but it does give
+some scaffold from which to hang the rest of the prototype.
+</p>
+
+<p>
+The proofreader code itself imports the pre-trained tokenizer, as well as
+the random language model, reads in the file requested, tokenizes it,
+and gets a probability assigned to each token. The proofreader then
+implements an arbitrary cutoff of 0.05, and any token with a probability
+below this is tagged as an error. It also includes some report metrics
+like how many errors were detected and how many errors per thousand
+characters, and all of these are displayed in the console.
+</p>
+
+<p>
+With important files included, here's what the current structure looks like:
+</p>
+
+<p>
+<pre>
+proofread-eng-scifi
+├── LICENSE
+├── README.md
+├── data
+│   ├── alices_adventures_in_wonderland.txt
+│   ├── dorian_gray.txt
+│   ├── dracula.txt
+│   ├── frankenstein.txt
+│   ├── hound_of_baskervilles.txt
+│   ├── legend_of_sleepy_hollow.txt
+│   ├── lost_world.txt
+│   ├── ozma_of_oz.txt
+│   ├── seven_dials.txt
+│   ├── time_machine.txt
+│   ├── twenty_thousand_leagues.txt
+│   └── war_of_worlds.txt
+├── evals
+│   ├── eval_proofreading.py
+│   ├── spelling.py
+│   └── test_evaluation_data.py
+├── pyproject.toml
+├── src
+│   └── proofread_eng_scifi
+│       ├── models
+│       │   ├── random
+│       │   │   ├── lm_random_00.py
+│       │   │   └── test_lm_random_00.py
+│       │   └── tokenizer
+│       │       ├── model_versions
+│       │       │   ├── tokenizer_00.model
+│       │       │   └── tokenizer_00.vocab
+│       │       ├── test_tokenizer_training.py
+│       │       ├── tokenizer_tools.py
+│       │       └── train_tokenizer_00.py
+│       ├── proof_00.py
+│       ├── proof_01.py
+│       └── tests
+│           ├── test_proof_00.py
+│           └── test_proof_01.py
+└── uv.lock
+</pre>
+</p>
+
+<p>
+This will continue to evolve, but
+<a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/commit/37d0d4874a20f2aed7046a16b16205ff836d3fb1">here is a link</a>
+to the commit captured in the directory tree above.
+</p>
+
+<h2><a id="Integration-with-the-evals"></a><a href="#Integration-with-the-evals">Integration with the evals</a></h2>
+
+<p>
+This end-to-end prototype now has just enough substance to it to let us
+run the evals against it. The spelling eval
+<a href="alms_task.html">described here</a> can call the proofreader through a
+function and run each of its five mistake-ridden paragraphs against it.
+Because the evals have a ground truth key for the actual mistakes, it can
+compare the detected mistakes and find where the hits and misses were.
+Any ground truth mistake that was overlapped by at least one detection is
+considered detected, a <em>true positive</em>. Similarly any ground truth mistake
+that has no overlaps is considered missed, a <em>false negative</em>. And any
+detected mistake that doesn’t overlap a ground truth mistake is considered
+a <em>false positive</em>. These then get combined to calculate
+precision and recall, the metrics of choice for the evals created.
+</p>
+
+<p>
+It’s worth noting that neither precision nor recall is zero.
+Precision is typically 8-12% and recall is typically 15-25%.
+The random baseline sometimes gets it right.
+</p>
+
+<h2><a id="Random-baseline"></a><a href="#Random-baseline">Random baseline</a></h2>
+
+<p>
+For most models, a safe place to start a baseline is a random number generator.
+Instead of making predictions that are intelligent in any way, just roll
+the dice each time. This is where we started with our spellchecker.
+For some tasks and performance metrics this will give near zero, but for
+others it could be much higher. For example, a random baseline on a true/false
+quiz would be about 50%. Knowing where the performance floor lies is
+helpful when it's time to interpret the performance numbers of future models.
+</p>
+
+<h2><a id="Consistency"></a><a href="#Consistency">Consistency</a></h2>
+
+<p>
+Consistent style makes code easier to read and helps bugs to be more visible.
+I aim to keep my code mostly consistent and mostly in line with
+the recommendations of <a href="https://peps.python.org/pep-0008/">PEP 8</a>,
+but if I have good reason to deviate I don't hesitate. For example,
+in most places I pust test files in the same directory as the modules they
+test, but in <code>src/proofread_eng_scifi</code> I opted to put them in their
+own subdirectory. Because of how I foresee the project evolving, this
+made the most sense to me.
+</p>
+
+<p>
+I've seen some
+wildly verbose and incomprehensible code that resulted from blindly
+keeping to consistent convensions.
+As Ralph Waldo Emerson notes in his seminal essays on coding standards,
+"A foolish consistency is the hobgoblin of little minds". This
+roughly translates to "use common sense". In particular, think about
+who is going to running and reading your code, and try to make their
+lives as easy as possible. Future you will thank you.
+</p>
+
+<h2><a id="Next-steps"></a><a href="#Next-steps">Next steps</a></h2>
+
+<p>
+Now that there is a skeleton end-to-end prototype in place, the next steps
+will be to start improving it piece by piece and re-evaluating it
+after each step. There is plenty of room for improvement.
+The evals are incomplete, the language model is laughably
+bad, the tokenizer has options to experiment with, and the UI needs
+a whole lot of polish.
+</p>
+
+<p>
+Things are just starting to get interesting.
+</p>
+    ]]></description>
+  </item>
+
   <item>
     <title>
     Python packaging with uv
@@ -1298,429 +1552,3 @@ You'll have to answer this question for yourself, but for me, yes, it’s worth 
 </p>
     ]]></description>
   </item>
-
-
-
-  <item>
-    <title>
-    Data Engineering for Beginners
-    </title>
-    <link>
-    https://brandonrohrer.org/data_eng_for_beginners.html
-    </link>
-    <pubDate>
-    Wed, 08 Apr 2026 08:36:00 EDT
-    </pubDate>
-    <guid>
-    https://brandonrohrer.org/data_eng_for_beginners.html#The-building-blocks
-    </guid>
-    <description><![CDATA[
-
-<p>
-If you need to climb the Data Engineering learning curve quickly (perhaps in preparation for an interview) I made
-<a href="https://brandonrohrer.org/data_eng_for_beginners.html">
-a handy one-stop guide</a>.
-</p>
-
-<p>
-It covers all the basic concepts in a beginner-friendly way. 
-The cool part is that most of them aren't too complex, once you strip away
-the fancy names. when you're done, you'll know the difference between
-strong consistency and eventual consistency, between a flat schema
-and a star schema, between OLAP and OLTP, and you'll be able to explain
-what makes a data warehouse, a data catalog, a data lake, and a data mart.
-</p>
-    ]]></description>
-  </item>
-
-
-  <item>
-    <title>
-    Transformers from the inside out
-    </title>
-    <link>
-    https://brandonrohrer.org/transformers
-    </link>
-    <pubDate>
-    Tue, 17 Mar 2026 08:36:00 EDT
-    </pubDate>
-    <guid>
-    https://brandonrohrer.org/transformers
-    </guid>
-    <description><![CDATA[
-
-<p>
-If your agentic coding environment is a Formula One car then the engine
-is the Transformer. The coolest thing to me about transformers is that
-they can be broken down into their tiniest pieces and understood,
-the way an engine can be disassembled to its smallest parts.
-</p>
-
-<p>
-I wrote
-<a href="https://brandonrohrer.org/transformers">
-a step by step walkthrough</a> of the re-assembly of a transformer
-starting from its tiniest bits. No machine learning background required.
-If you like looking under the hood, this is for you.
-</p>
-
-    ]]></description>
-  </item>
-
-  <item>
-    <title>
-    Training your own Language Model Tokenizer
-    </title>
-    <link>
-    https://brandonrohrer.org/alms_tokenizer.html
-    </link>
-    <pubDate>
-    Sun, 22 Feb 2026 06:42:00 EDT
-    </pubDate>
-    <guid>
-    https://brandonrohrer.org/alms_tokenizer.html
-    </guid>
-    <description><![CDATA[
-
-<p>
-The first step in building a small-scale LLM, an
-<a href="https://brandonrohrer.com/alms.html">Artisanal Language Model</a>, is to
-create a vocabulary of tokens. This converts a long string of text into
-a somewhat shorter list of integers. We don't think about this step
-often because it happens behind the scenes of LLM creation, but
-building a model from scratch gives us the rare opportunity to look
-more closely at tokenization.
-</p>
-
-<p>
-The tokenizer is the first heavy duty processing that input data gets
-exposed to when it churns through an LLM. The tokenizer takes the text
-or audio or image and breaks it down into a sequence of bite-sized pieces
-called tokens.
-</p>
-
-<p>
-In theory, an LLM could operate on any discrete piece
-of information, even fine-grained ones like characters, pixels, and bytes,
-but in practice these are too small to carry much information individually
-and working with them directly puts a greater burden on the model
-to try to combine them and make sense of them.
-</p>
-
-<p>
-To give the models a leg up, the tiny pieces of input get pre-combined
-into more useful bits called tokens. For instance, when processing a
-string of English text like <code>How much wood could a woodchuck chuck?</code>, it
-might be tokenized into <code>How much</code>, <code>wood</code>, <code>could</code>, <code>a wood</code>, <code>chuck</code>,
-<code>chuck</code>, <code>?</code>. Tokens don't fall strictly on word boundaries and can contain
-more than one word. Handling 7 tokens instead of 38 characters makes life
-a lot easier for the stages that follow. Internally, each of these word
-pieces gets assigned a number for efficient handling, so this sentence
-ends up looking like <code>[6387, 73, 593, 5365, 837, 837, 24]</code>.
-</p>
-
-<p>
-Tokenization is an example of automated feature engineering,
-also known as feature learning or
-feature discovery. It is understood among machine learning practitioners
-that once you get a good set of features, you're 80% of the way to
-solving your problem. It is an important step to get right, and has a huge
-impact on the quality of results.
-</p>
-
-<p>
-An advantage to an Artisanal Language Model with a curated data set is
-that it gives an opportunity to create a model-specific tokenizer.
-The representation of input data can be tailored to the needs of your
-specific problem, instead of having to create something that could
-potentially cover every conceivable question someone could ask and
-task they could propose.
-</p>
-
-<h2>Vocabulary</h2>
-
-<p>
-The collection of tokens that a tokenizer works with is called its
-vocabulary. The tokenizers used by popular LLMs have vocabularies of
-100,000 or more different tokens.
-</p>
-
-<p>
-The size of the vocabluary is an important design parameter
-that has a big effect on how big the model needs to be and how well it can
-perform. A larger vocabulary means that word chunks and other pieces
-of input can be bigger, saving the model the trouble of splicing them
-together. It means that a given sequence of tokens can represent
-a longer history of inputs. But it also means that the model has
-a larger number of relationships to consider. Any given input token
-might be predictive of any given output token, making the size of the
-that space <em>O(N^2)</em>&mdash;something that grows as the <em>square</em> of the the
-number of tokens. And when you add in the fact that it's not just
-the current token, but the whole context history of tokens, that complexity
-goes up further. (Attention is the magic trick that keeps it from
-exploding catastrophically. More on that later.)
-</p>
-
-<p>
-The flip side of this relationship is that reducing a vocabulary to 10%
-of its original size means that the demands on
-the model are reduced by far more than
-that, down to something like 1% or 0.1%. The amount of training data needed,
-the computation required, the inference time, all get reduced. The smaller
-the vocabulary, the less time and expense to train and use a model.
-</p>
-
-<p>
-Having an ALM focused on a single task with a curated data set makes
-this possible. The more targeted the data set, the fewer the tokens
-needed to represent it well.
-</p>
-
-<p>
-All the numbers I mention above are very hand wavy because LLMs are so very
-expensive to train and evaluate. I'm not aware of any research published
-about the exact nature of the relationship between
-vocabulary size, number of model
-parameters, and model performance. A smaller ALM that is feasible to
-re-train a number of times make this investigation approachable.
-It means that the tokenizer for a given ALM can be trial-and-error optimized
-for its intended usage.
-</p>
-    ]]></description>
-  </item>
-
-  <item>
-    <title>
-    Artisanal Language Models
-    </title>
-    <link>
-    https://brandonrohrer.com/alms.html
-    </link>
-    <pubDate>
-    Wed, 18 Feb 2026 08:36:00 EDT
-    </pubDate>
-    <guid>
-    https://brandonrohrer.com/alms.html
-    </guid>
-    <description><![CDATA[
-
-
-<p>
-Large Language Models are everywhere, and in February 2026
-it's hard to imagine what the machine learning world would look like
-without them. But it's fun to imagine some alternatives.
-</p>
-
-<h2><a id="What-if-an-LLM-were-trained-to-complete-a-specific-task?"></a><a href="#What-if-an-LLM-were-trained-to-complete-a-specific-task?">What if an LLM were trained to complete a specific task?</a></h2>
-
-<p>
-LLMs are general purpose tools, trained to be able to do many
-different things. As a result they are vast. And they are better at
-doing some things than others.
-</p>
-
-<p>
-If an LLM were instead focused on a particular task, trained to perform it
-as well as possible and ignore everything else, then it would have
-a better chance at being excellent at that thing, rather than just
-being OK at everything.
-</p>
-
-<p>
-The structure around the model, the preprocessing of the input data and
-postprocessing out the output data, could all be specially built to
-give the best results on a single task. Whether for document retrieval
-or spell checking or autocomplete or interactive chat, whether for text or
-for photos or for music, an Artisanal Language Model could be focused
-on doing one thing and doing it well.
-</p>
-
-<h2><a id="What-if-we-could-train-an-LLM-on-a-data-set-we-collected-ourselves?"></a><a href="#What-if-we-could-train-an-LLM-on-a-data-set-we-collected-ourselves?">What if we could train an LLM on a data set we collected ourselves?</a></h2>
-
-<p>
-LLMs are trained on practically the whole internet.
-</p>
-
-<p>
-The downside on such a broad swath of training data is that LLMs are also
-trained on every stupid thing someone decided to post in a drunken rant.
-ML engineers try to correct for this with post-processing filter steps
-and prescriptive prompts, but there's no way to completely eliminate
-idiocy from the model once it's been trained in.
-</p>
-
-<p>
-With a set of curated training
-data, every inclusion is a deliberate decision, and garbage-in-garbage-out
-becomes less of a problem.
-Curated training data would also avoid the many legal and ethical viiolations
-called out in the training sets of popular LLMs, including copyright
-violation, license violation, nonconsensual sharing of personal images,
-and inclusion of CSAM.
-</p>
-
-<p>
-Another advantage of an ALM focused on a specific task is that it can
-limit its training data to what is relevant to the problem at hand.
-If building a Javascript code completion model, we wouldn't need to include
-large amounts of prose every language of the world, or even code in other
-computer languages. We wouldn't need to include catalogs of audio recordings
-or millions of images. We could limit the training data to Javascript, making
-it orders of magnitude smaller.
-</p>
-
-<p>
-With smaller training data sets, training itself becomes more feasible.
-For LLMs we can count on one hand the companies large enough to train their
-own general purpose models from scratch. The investment in data engineering
-and computation is huge. But for a training data set that is 0.01% of
-the size, the training time and cost come down within the reach of
-many more organizations, researchers, and hobbyists.
-</p>
-
-<h2><a id="What-if-an-LLM-could-be-trained-on-CPUs?"></a><a href="#What-if-an-LLM-could-be-trained-on-CPUs?">What if an LLM could be trained on CPUs?</a></h2>
-
-<p>
-Training a modern LLM requires centuries of GPU time. This gets spread across
-many thousands of GPUs so that it completes in a reasonable amount of time,
-but it remains massive. And it results in huge hardware and power bills.
-</p>
-
-<p>
-If a much smaller model were capable of being trained on CPU only, even if
-it required many of them, it would remove a huge barrier to language model
-training. The rate of experimentation, innovation, diversification, and
-specialization would increase tremendously.
-</p>
-
-<h2><a id="What-if-an-LLM-could-run-on-your-laptop?"></a><a href="#What-if-an-LLM-could-run-on-your-laptop?">What if an LLM could run on your laptop?</a></h2>
-
-<p>
-The current generation of LLMs require clusters of GPUs for inference.
-Even after they are
-trained, they require too much computation and hardware to sit comfortably
-in anything but a data center.
-</p>
-
-<p>
-If there were language models small enough to run on a laptop and nimble
-enough to return inference results quickly on laptop hardware, their
-deployment could be made more robust. No network latency, no reliance on
-connectivity, no dependence on external services' uptime. The reliability
-engineering would become considerably more straightforward and the
-expectations of availability could be raised.
-</p>
-
-<p>
-This also opens the way for proprietary models and applications requiring
-high security. The ability to run isolated from an external network
-opens up new domains.
-</p>
-
-<h2><a id="What-if-an-LLM-could-continue-to-learn-as-you-use-it?"></a><a href="#What-if-an-LLM-could-continue-to-learn-as-you-use-it?">What if an LLM could continue to learn as you use it?</a></h2>
-
-<p>
-Current LLMs are too unwieldy to be updated on the fly. While there are
-ways to refine them, such as fine tuning or reinforcement learning
-from human feedback, these are either tweaks to a small part of the model
-or post-processing steps. They aren't capable of updating the model as a whole.
-</p>
-
-<p>
-If it were possible to update the model based on every interaction, every
-new bit of input data and user response, that would make it possible for
-the model to get better over time in a meaningful way. And most importantly,
-it would continue to adapt to the specific users, tasks, and input data
-it was exposed to. It would learn the parameters of its job under
-the continuous mentorship of its human users.
-</p>
-
-<p>
-<br>
-<br>
-What if we had Artisanal Language Models?
-</p>
-
-<p>
-I hope to find out.
-</p>
-
-    ]]></description>
-  </item>
-
-  <item>
-    <title>
-    Graffiti Wall: A commons drawing app
-    </title>
-    <link>
-    https://graffitiwall.nexus/graffiti_wall.html
-    </link>
-    <pubDate>
-    Mon, 09 Feb 2026 08:36:00 EDT
-    </pubDate>
-    <guid>
-    https://graffitiwall.nexus/graffiti_wall.html
-    </guid>
-    <description><![CDATA[
-<p>
-I made public space where anyone and everyone can go and scribble anonymously.
-Probably a mistake, but it taught me a lot.
-</p>
-<p>
-<a href="https://graffitiwall.nexus/graffiti_wall.html">
-Graffiti Wall</a> (
-<a href="https://codeberg.org/brohrer/graffitiwall.nexus">
-  frontend code</a>,
-<a href="https://codeberg.org/brohrer/graffitiwall-server">
-  backend code</a>)
-</p>
-<p>
-It's the latest step on my journey, stitching together everything
-I've been learning about
-self-hosting, deploying a WSGI server, and backing it with a
-Postgres database.
-</p>
-<p>
-Please enjoy it!
-</p>
-
-    ]]></description>
-  </item>
-
-
-  <item>
-    <title>
-    An addition app
-    </title>
-    <link>
-    https://graffitiwall.nexus//graffiti_adder.html
-    </link>
-    <pubDate>
-    Sun, 28 Dec 2025 08:36:00 EDT
-    </pubDate>
-    <guid>
-    https://graffitiwall.nexus//graffiti_adder.html
-    </guid>
-    <description><![CDATA[
-<p>
-I made a little
-<a href="https://graffitiwall.nexus/graffiti_adder.html">
-Addition App</a> (
-<a href="https://codeberg.org/brohrer/graffitiwall.nexus">
-  frontend code</a>,
-<a href="https://codeberg.org/brohrer/graffitiwall-server">
-  backend code</a>)
-to stitch together everything I've been learning about
-self-hosting, deploying a WSGI server, and backing it with a
-Postgres database.
-</p>
-<p>
-Please enjoy it!
-</p>
-
-    ]]></description>
-  </item>
-
-
-  </channel>
-</rss>
