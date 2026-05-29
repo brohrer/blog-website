@@ -151,7 +151,7 @@ It’s worth noting that neither precision nor recall is zero.
 Precision is typically 8-12% and recall is typically 15-25%.
 The random baseline sometimes gets it right.
 
-## Random baseline
+## Version 1.0: Random baseline
 
 For most models, a safe place to start a baseline is a random number generator.
 Instead of making predictions that are intelligent in any way, just roll

@@ -25,7 +25,9 @@ document.write('\
             The opinions here are wholly my own.\
           </p>\
           <p>\
-            Certified 100% Human-generated\
+            Certified 100% Human-generated &nbsp;\
+            <a href="scienceispoetry.net/noodles">\
+            .</a>\
           </p>\
         </section>\
       </footer>\
