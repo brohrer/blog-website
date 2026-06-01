@@ -26,7 +26,7 @@ document.write('\
           </p>\
           <p>\
             Certified 100% Human-generated &nbsp;\
-            <a href="scienceispoetry.net/noodles">\
+            <a href="https://scienceispoetry.net/noodles">\
             .</a>\
           </p>\
         </section>\
