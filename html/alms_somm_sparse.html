@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Version 6: A sparse second-order Markov model";</script>
+  <script type="text/javascript">var publication_date = "June 20, 2026";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+After some trial and error with a few sparse representation concepts,
+I settled on one that takes advantage of one of Python's strengths:
+dictionaries. The sparse second-order model keeps two running
+dictionaries: one full of bigram counts and one for trigram counts.
+</p>
+
+<h2><a id="Representation"></a><a href="#Representation">Representation</a></h2>
+
+<p>
+A bigram is a token pair. For the token sequence AKFLS, the bigrams are
+AK, KF, FL, LS. And a trigram is a triple. The same sequence would
+contain trigrams AKF, KFL, FLS. (More generally, n-grams have n tokens.)
+</p>
+
+<p>
+Dictionaries tracking these have bi/tri-grams as keys and counts as
+values. Any -grams not yet observed will not be in the dictionary at all,
+which is what allows it to be sparse.
+</p>
+
+<p>
+<pre>
+bigram_dict = {
+    "AK": 1,
+    "KF": 1,
+    "FL": 1,
+    "LS": 1,
+}
+trigram_dict = {
+    "AKF": 1,
+    "KFL": 1,
+    "FLS": 1,
+}
+</pre>
+</p>
+
+<p>
+To save some more space in memory, instead of using the token text itself,
+I took the list of token ids, which are integers, and converted it to
+a tuple. There are ways to shrink this further, but they start to get
+more convoluted and I'll wait until I bump up against the limits of this
+scheme before I wrestle with them.
+</p>
+
+<h2><a id="Implementation"></a><a href="#Implementation">Implementation</a></h2>
+
+<p>
+In order calculate the likelihood of a next token with this formula
+</p>
+
+<p>
+<code>P(ABC | AB) = count(ABC) / count(AB)</code>
+</p>
+
+<p>
+the count(ABC) and count(AB) can be looked up directly in their respective
+dictionaries. The pseudo-Python has two dictionary lookups to estimate
+the likelihood of F following AK.
+</p>
+
+<p>
+<pre>
+likelihood = trigram_dict["AKF"] / bigram_dict["AK"]
+</pre>
+</p>
+
+<p>
+<a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/commit/2655998848b58179545c73e5144ce51f23ce5b22/src/proofread_eng_scifi/models/somm/somm_sparse.py#L40">The full code</a>
+adds in default values of 0 for any missing dictionary keys
+and some small values for numerical stability.
+</p>
+
+<h2><a id="Training"></a><a href="#Training">Training</a></h2>
+
+<p>
+A fun thing about using dictionaries is that they are fast in Python.
+Training happens almost as fast as the data can be read from disk.
+A dictionary read is a hash lookup which screams, even with large
+dictionaries. It's O(1) for you computer science nerds.
+</p>
+
+<p>
+I also noticed on closer inspection that my earlier implementation re-calculated
+the transition probabilities after loading each book. This was unnecessary,
+and constituted the bulk of the training computation.
+Skipping this step streamlined the training considerably.
+</p>
+
+<p>
+Training for the sparse model ended up quite fast fast and is  sospace efficient
+that it allowed me to go back to using the full 20,000-element tokenizer.
+</p>
+
+<h2><a id="Performance"></a><a href="#Performance">Performance</a></h2>
+
+<p>
+Unfortunately, moving to the larger tokenizer meant that tokens were longer
+and three-token sequences were even less likely to re-occur. This means
+that the proofreader was surprised by a lot of things. The recall was perfect.
+Every single error got called out as an error. But the precision dropped to
+an abysmal 4 percent. That means for every mistake it identified correctly,
+it found 24 others that were not actually mistakes. 
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>model</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>01</td>
+      <td>random</td>
+      <td>(9) 16</td>
+      <td>(7) 12</td>
+      <td>(8) 16</td>
+    </tr>
+    <tr>
+      <td>02</td>
+      <td>fomm_00</td>
+      <td>(7) 98</td>
+      <td>(7) 98</td>
+      <td>(7) 98</td>
+    </tr>
+    <tr>
+      <td>03</td>
+      <td>somm_00</td>
+      <td>(6) 100</td>
+      <td>(6) 94</td>
+      <td>(6) 98</td>
+    </tr>
+    <tr>
+      <td>04</td>
+      <td>fomm_01</td>
+      <td>(8) 100</td>
+      <td>(8) 98</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>05</td>
+      <td>somm_01</td>
+      <td>(8) 100</td>
+      <td>(7) 90</td>
+      <td>(7) 96</td>
+    </tr>
+    <tr>
+      <td>06</td>
+      <td>somm_02</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<h2><a id="moar-data"></a><a href="#moar-data">moar data</a></h2>
+
+<p>
+The solution to this is to give the model a richer training data set.
+It has so little experience at this point, that everything is novel.
+The model needs to cram a lot more text into its representation to be able
+to better separate correct prose from incorrect.
+</p>
+
+<p>
+The temptation here is to indiscriminately scrape a truckload of data
+and assume that the model will learn the right patterns from it. That is
+antithetical to the Artisanal approach. This is a point where I get to
+walk the walk and figure out a way to <em>thoughtfully</em> expand our data set.
+</p>
+
+<p>
+I relied heavily on this
+<a href="https://github.com/pgcorpus/gutenberg">helpful collection of Project Gutenberg tools</a>
+which helped me download a lot of raw text versions and compiled a csv
+of their metadata. This gave me a foothold for reading in the information
+and selecting the most relevant texts. Using
+<a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/scripts/create_dataset_400.py">a Python script</a>
+I whittled the list of 80,000 books down to a subset that
+</p>
+
+<ul>
+<li> are text, not audio</li>
+<li> in English</li>
+<li> have "Science fiction" as a subject</li>
+</ul>
+
+<p>
+That left a little of 3,000 titles. I also removed the titles I had
+set aside as evaluation texts--Alice in Wonderland, Frankenstein,
+and Call of Cthulhu. Due to the fact that my download of the archive
+is only partial so far, that left me with 416 titles in the new training
+corpus. (It's obnixous to put this much data
+in a repo, so you'll have to take my
+word for it.)
+</p>
+
+<p>
+Also, in the spirit of investing in data qualityi, I preprocessed the texts
+to remove the Project Gutenberg headers and footers, ensuring that
+the models would be focused on learning the underlying data and not
+fixating on artifacts.
+</p>
+
+<p>
+After retraining the tokenizer, the first-order model (version 07),
+and the second-order model (version 08) on the larger training corpus,
+the evals show some changes.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>05</td>
+      <td>(8) 100</td>
+      <td>(7) 90</td>
+      <td>(7) 96</td>
+    </tr>
+    <tr>
+      <td>06</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+    </tr>
+    <tr>
+      <td>07</td>
+      <td>(10) 96</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>08</td>
+      <td>(6) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Performance values are shown as: (precision %) recall %
+</p>
+
+<p>
+Comparing version 08 to version 06, the second-order model shows a
+tiny bump in precision. Progress, yes, but not very much.
+</p>
+
+<p>
+Comparing version 07 to version 05, the first-order model shows a
+small bump in precision, but it's still pretty low. About one in ten
+flagged errors is real. The
+recall is still ridiculously high.
+Punctuation again has the lowest
+recall numbers, illustrating how difficult it is and how much context
+it takes to punctuate well.
+</p>
+
+<p>
+The high recall and low precision numbers
+indicate that the models are too specific. Much of what they see are brand-new
+to them because they have never seen those particular sequences
+before. The larger the tokenizer alphabet, the
+longer the chararacter strings represented by tokens, the rarer they will
+each seem to be. A good way to illustrate this is by training
+a set of second-order models using tokenizers with smaller dictionaries.
+</p>
+
+<h2><a id="Dictionary-size"></a><a href="#Dictionary-size">Dictionary size</a></h2>
+
+<p>
+Shrinking the dictionary size used with the second-order model does
+indeed bring up precision at the cost of some recall. This sequence
+shows dictionary sizes of 10k, 5k, 2k, 1k.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>09</td>
+      <td>(6) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>(7) 100</td>
+      <td>(7) 94</td>
+      <td>(7) 100</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>(11) 98</td>
+      <td>(9) 88</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>(17) 92</td>
+      <td>(12) 74</td>
+      <td>(16) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+These show how precision and recall can be traded off against each other
+to a certain extent by adjusting the alphabet size. But they are still
+too low to be useful. (I fear the answer is LOTS more data.)
+</p>
+
+<h2><a id="Sparsify-first-order-model"></a><a href="#Sparsify-first-order-model">Sparsify first-order model</a></h2>
+
+<p>
+The second order sparse model worked so well that I went back
+and sparsified the first-order Markov model too.
+Comparing the two shows that the performance is identical.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>07</td>
+      <td>(10) 96</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>(10) 96</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Actually when I first ran these, the performance was NOT identical.
+It was a head scratcher for me until a found a bug where I was setting
+ther error detection threshold in two different places and the two did
+not agree. It's another illustration of how testing and double checking
+things that should obviously work is a great way to surface subtle bugs
+in your code. And there is <em>always</em> another bug.
+</p>
+
+<h2><a id="Reporting"></a><a href="#Reporting">Reporting</a></h2>
+
+<p>
+At this point the reporting table is growing large enough to merit splitting
+into a performance table and a model summary table. Also, the variants
+are proliferating, so it's helpful to keep track of the characterics
+of each model so that patterns in what works, and doesn't work, can
+start to emerge.
+</p>
+
+<p>
+Here's what a sample of the model table and eval table look like
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>model</th>
+      <th>description</th>
+      <th>tokenizer</th>
+      <th>alphabet</th>
+      <th>books</th>
+      <th>error cutoff</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>09</td>
+      <td>somm_04</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>06</td>
+      <td>10k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>somm_05</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>07</td>
+      <td>5k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>fomm_03</td>
+      <td>sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>416</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>somm_06</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>08</td>
+      <td>2k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>somm_07</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>09</td>
+      <td>1k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>09</td>
+      <td>(6) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>(7) 100</td>
+      <td>(7) 94</td>
+      <td>(7) 100</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>(10) 96</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>(11) 98</td>
+      <td>(9) 88</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>(17) 92</td>
+      <td>(12) 74</td>
+      <td>(16) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<h2><a id="Registry"></a><a href="#Registry">Registry</a></h2>
+
+<p>
+In fact the work is also reaching the point where pulling out information about
+each model and how it was trained can be confusing and error-prone.
+It is far me far beyond the point where I can just hold it all in my head.
+Tracking model versions, variants, experiments, and their characteristics
+is the job of a Registry. There are vendors ready to sell you ML Registry
+products that have a lot of convenient features, but for a project of this
+size all we need is a file where these things are written down.
+</p>
+
+<p>
+I created a few version tracking files. There is now
+</p>
+
+<ul>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/registry.py">one for proofreader versions</a></li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/models/tokenizer/registry.py">one for tokenizer versions</a></li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/models/fomm/registry.py">one for first order Markov model versions</a></li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/models/somm/registry.py">one for second order Markov model versions</a></li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/models/random/registry.py">one for random model versions</a> and</li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/data_registry.py">one for training data corpuses</a></li>
+</ul>
+
+<p>
+Having separate files for each, distributed across the repo nearby the
+artifacts they are tracking, greatly simplified and robustified
+the process of retrieving and collating information to make the
+reporting charts. It was also a helpful data modeling exercise,
+thinking through which tidbits belong where. For instance, whether
+<code>error_threshold</code> is a characteristic of a Markov model or a proofreader.
+</p>
+
+<p>
+These "registries" lack all of the convenience tooling for automatic
+generation and population. I have to manually create each entry.
+But the record they provide has already proven quite useful.
+</p>
+
+<h2><a id="New-eval:-Grammar"></a><a href="#New-eval:-Grammar">New eval: Grammar</a></h2>
+
+<p>
+I will continue to eat my vegetables and add a new eval at each stage.
+This time it is grammar. Things like verb tense, pronoun-antecedent
+agreement, and preposition choice. As I went about injecting errors
+into sample text, I found it hard to distinguish between purely
+grammatical errors and errors of word choice, another category I planned
+to create an eval for. As a result the grammar eval also includes
+many examples of erroneous word choice.
+</p>
+
+<p>
+Nothing jumped out to me about the models' performance on the grammar eval.
+The models are all hypersensitive and fire off false positives far
+too often to be anything approaching useful. But after this round of
+machinations, there are a stable of 13 models and four evals, summarized
+thus:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>grammar</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>01</td>
+      <td>(10) 18</td>
+      <td>(12) 16</td>
+      <td>(12) 24</td>
+      <td>(6) 12</td>
+    </tr>
+    <tr>
+      <td>02</td>
+      <td>(7) 98</td>
+      <td>(8) 100</td>
+      <td>(7) 98</td>
+      <td>(7) 98</td>
+    </tr>
+    <tr>
+      <td>03</td>
+      <td>(6) 100</td>
+      <td>(7) 96</td>
+      <td>(6) 94</td>
+      <td>(6) 98</td>
+    </tr>
+    <tr>
+      <td>04</td>
+      <td>(8) 100</td>
+      <td>(10) 100</td>
+      <td>(8) 98</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>05</td>
+      <td>(8) 100</td>
+      <td>(8) 94</td>
+      <td>(7) 90</td>
+      <td>(7) 96</td>
+    </tr>
+    <tr>
+      <td>06</td>
+      <td>(4) 100</td>
+      <td>(5) 100</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+    </tr>
+    <tr>
+      <td>07</td>
+      <td>(10) 96</td>
+      <td>(12) 98</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>08</td>
+      <td>(6) 100</td>
+      <td>(6) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+    <tr>
+      <td>09</td>
+      <td>(6) 100</td>
+      <td>(7) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>(7) 100</td>
+      <td>(8) 100</td>
+      <td>(7) 94</td>
+      <td>(7) 100</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>(10) 96</td>
+      <td>(12) 98</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>(11) 98</td>
+      <td>(11) 92</td>
+      <td>(9) 88</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>(17) 92</td>
+      <td>(15) 78</td>
+      <td>(12) 74</td>
+      <td>(16) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Performance values are shown as: (precision %) recall %
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>model</th>
+      <th>description</th>
+      <th>tokenizer</th>
+      <th>alphabet</th>
+      <th>books</th>
+      <th>error cutoff</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>01</td>
+      <td>random_00</td>
+      <td>random baseline</td>
+      <td>None</td>
+      <td>0k</td>
+      <td>0</td>
+      <td>0.05</td>
+    </tr>
+    <tr>
+      <td>02</td>
+      <td>fomm_00</td>
+      <td>1st-order Markov</td>
+      <td>00</td>
+      <td>20k</td>
+      <td>10</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>03</td>
+      <td>somm_00</td>
+      <td>2nd-order Markov</td>
+      <td>04</td>
+      <td>1k</td>
+      <td>10</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>04</td>
+      <td>fomm_01</td>
+      <td>1st-order Markov</td>
+      <td>00</td>
+      <td>20k</td>
+      <td>20</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>05</td>
+      <td>somm_01</td>
+      <td>2nd-order Markov</td>
+      <td>04</td>
+      <td>1k</td>
+      <td>20</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>06</td>
+      <td>somm_02</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>00</td>
+      <td>20k</td>
+      <td>20</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>07</td>
+      <td>fomm_02</td>
+      <td>1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>416</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>08</td>
+      <td>somm_03</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>09</td>
+      <td>somm_04</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>06</td>
+      <td>10k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>somm_05</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>07</td>
+      <td>5k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>fomm_03</td>
+      <td>sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>416</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>somm_06</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>08</td>
+      <td>2k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>somm_07</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>09</td>
+      <td>1k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<h2><a id="Next-steps"></a><a href="#Next-steps">Next steps</a></h2>
+
+<p>
+The round of improvements pushed Artisanal Language Model for
+proofreading ahead a little, but there is still much to do. Then next
+obvious step is to get a lot more data, but in a way that is consistent
+with the goals of ALMs. And after that explore the next round of models.
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>

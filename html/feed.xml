@@ -7,6 +7,845 @@
 
   <item>
     <title>
+    Artisanal Language Model v6: Sparse second-order Markov model
+    </title>
+    <link>
+    https://brandonrohrer.org/alms_somm_sparse.html
+    </link>
+    <pubDate>
+    Sat, 20 Jun 2026 06:36:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.org/alms_somm_sparse.html
+    </guid>
+    <description><![CDATA[
+
+
+<p>
+After some trial and error with a few sparse representation concepts,
+I settled on one that takes advantage of one of Python's strengths:
+dictionaries. The sparse second-order model keeps two running
+dictionaries: one full of bigram counts and one for trigram counts.
+</p>
+
+<h2><a id="Representation"></a><a href="#Representation">Representation</a></h2>
+
+<p>
+A bigram is a token pair. For the token sequence AKFLS, the bigrams are
+AK, KF, FL, LS. And a trigram is a triple. The same sequence would
+contain trigrams AKF, KFL, FLS. (More generally, n-grams have n tokens.)
+</p>
+
+<p>
+Dictionaries tracking these have bi/tri-grams as keys and counts as
+values. Any -grams not yet observed will not be in the dictionary at all,
+which is what allows it to be sparse.
+</p>
+
+<p>
+<pre>
+bigram_dict = {
+    "AK": 1,
+    "KF": 1,
+    "FL": 1,
+    "LS": 1,
+}
+trigram_dict = {
+    "AKF": 1,
+    "KFL": 1,
+    "FLS": 1,
+}
+</pre>
+</p>
+
+<p>
+To save some more space in memory, instead of using the token text itself,
+I took the list of token ids, which are integers, and converted it to
+a tuple. There are ways to shrink this further, but they start to get
+more convoluted and I'll wait until I bump up against the limits of this
+scheme before I wrestle with them.
+</p>
+
+<h2><a id="Implementation"></a><a href="#Implementation">Implementation</a></h2>
+
+<p>
+In order calculate the likelihood of a next token with this formula
+</p>
+
+<p>
+<code>P(ABC | AB) = count(ABC) / count(AB)</code>
+</p>
+
+<p>
+the count(ABC) and count(AB) can be looked up directly in their respective
+dictionaries. The pseudo-Python has two dictionary lookups to estimate
+the likelihood of F following AK.
+</p>
+
+<p>
+<pre>
+likelihood = trigram_dict["AKF"] / bigram_dict["AK"]
+</pre>
+</p>
+
+<p>
+<a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/commit/2655998848b58179545c73e5144ce51f23ce5b22/src/proofread_eng_scifi/models/somm/somm_sparse.py#L40">The full code</a>
+adds in default values of 0 for any missing dictionary keys
+and some small values for numerical stability.
+</p>
+
+<h2><a id="Training"></a><a href="#Training">Training</a></h2>
+
+<p>
+A fun thing about using dictionaries is that they are fast in Python.
+Training happens almost as fast as the data can be read from disk.
+A dictionary read is a hash lookup which screams, even with large
+dictionaries. It's O(1) for you computer science nerds.
+</p>
+
+<p>
+I also noticed on closer inspection that my earlier implementation re-calculated
+the transition probabilities after loading each book. This was unnecessary,
+and constituted the bulk of the training computation.
+Skipping this step streamlined the training considerably.
+</p>
+
+<p>
+Training for the sparse model ended up quite fast fast and is  sospace efficient
+that it allowed me to go back to using the full 20,000-element tokenizer.
+</p>
+
+<h2><a id="Performance"></a><a href="#Performance">Performance</a></h2>
+
+<p>
+Unfortunately, moving to the larger tokenizer meant that tokens were longer
+and three-token sequences were even less likely to re-occur. This means
+that the proofreader was surprised by a lot of things. The recall was perfect.
+Every single error got called out as an error. But the precision dropped to
+an abysmal 4 percent. That means for every mistake it identified correctly,
+it found 24 others that were not actually mistakes.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>model</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>01</td>
+      <td>random</td>
+      <td>(9) 16</td>
+      <td>(7) 12</td>
+      <td>(8) 16</td>
+    </tr>
+    <tr>
+      <td>02</td>
+      <td>fomm_00</td>
+      <td>(7) 98</td>
+      <td>(7) 98</td>
+      <td>(7) 98</td>
+    </tr>
+    <tr>
+      <td>03</td>
+      <td>somm_00</td>
+      <td>(6) 100</td>
+      <td>(6) 94</td>
+      <td>(6) 98</td>
+    </tr>
+    <tr>
+      <td>04</td>
+      <td>fomm_01</td>
+      <td>(8) 100</td>
+      <td>(8) 98</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>05</td>
+      <td>somm_01</td>
+      <td>(8) 100</td>
+      <td>(7) 90</td>
+      <td>(7) 96</td>
+    </tr>
+    <tr>
+      <td>06</td>
+      <td>somm_02</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<h2><a id="moar-data"></a><a href="#moar-data">moar data</a></h2>
+
+<p>
+The solution to this is to give the model a richer training data set.
+It has so little experience at this point, that everything is novel.
+The model needs to cram a lot more text into its representation to be able
+to better separate correct prose from incorrect.
+</p>
+
+<p>
+The temptation here is to indiscriminately scrape a truckload of data
+and assume that the model will learn the right patterns from it. That is
+antithetical to the Artisanal approach. This is a point where I get to
+walk the walk and figure out a way to <em>thoughtfully</em> expand our data set.
+</p>
+
+<p>
+I relied heavily on this
+<a href="https://github.com/pgcorpus/gutenberg">helpful collection of Project Gutenberg tools</a>
+which helped me download a lot of raw text versions and compiled a csv
+of their metadata. This gave me a foothold for reading in the information
+and selecting the most relevant texts. Using
+<a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/scripts/create_dataset_400.py">a Python script</a>
+I whittled the list of 80,000 books down to a subset that
+</p>
+
+<ul>
+<li> are text, not audio</li>
+<li> in English</li>
+<li> have "Science fiction" as a subject</li>
+</ul>
+
+<p>
+That left a little of 3,000 titles. I also removed the titles I had
+set aside as evaluation texts--Alice in Wonderland, Frankenstein,
+and Call of Cthulhu. Due to the fact that my download of the archive
+is only partial so far, that left me with 416 titles in the new training
+corpus. (It's obnixous to put this much data
+in a repo, so you'll have to take my
+word for it.)
+</p>
+
+<p>
+Also, in the spirit of investing in data qualityi, I preprocessed the texts
+to remove the Project Gutenberg headers and footers, ensuring that
+the models would be focused on learning the underlying data and not
+fixating on artifacts.
+</p>
+
+<p>
+After retraining the tokenizer, the first-order model (version 07),
+and the second-order model (version 08) on the larger training corpus,
+the evals show some changes.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>05</td>
+      <td>(8) 100</td>
+      <td>(7) 90</td>
+      <td>(7) 96</td>
+    </tr>
+    <tr>
+      <td>06</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+    </tr>
+    <tr>
+      <td>07</td>
+      <td>(10) 96</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>08</td>
+      <td>(6) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Performance values are shown as: (precision %) recall %
+</p>
+
+<p>
+Comparing version 08 to version 06, the second-order model shows a
+tiny bump in precision. Progress, yes, but not very much.
+</p>
+
+<p>
+Comparing version 07 to version 05, the first-order model shows a
+small bump in precision, but it's still pretty low. About one in ten
+flagged errors is real. The
+recall is still ridiculously high.
+Punctuation again has the lowest
+recall numbers, illustrating how difficult it is and how much context
+it takes to punctuate well.
+</p>
+
+<p>
+The high recall and low precision numbers
+indicate that the models are too specific. Much of what they see are brand-new
+to them because they have never seen those particular sequences
+before. The larger the tokenizer alphabet, the
+longer the chararacter strings represented by tokens, the rarer they will
+each seem to be. A good way to illustrate this is by training
+a set of second-order models using tokenizers with smaller dictionaries.
+</p>
+
+<h2><a id="Dictionary-size"></a><a href="#Dictionary-size">Dictionary size</a></h2>
+
+<p>
+Shrinking the dictionary size used with the second-order model does
+indeed bring up precision at the cost of some recall. This sequence
+shows dictionary sizes of 10k, 5k, 2k, 1k.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>09</td>
+      <td>(6) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>(7) 100</td>
+      <td>(7) 94</td>
+      <td>(7) 100</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>(11) 98</td>
+      <td>(9) 88</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>(17) 92</td>
+      <td>(12) 74</td>
+      <td>(16) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+These show how precision and recall can be traded off against each other
+to a certain extent by adjusting the alphabet size. But they are still
+too low to be useful. (I fear the answer is LOTS more data.)
+</p>
+
+<h2><a id="Sparsify-first-order-model"></a><a href="#Sparsify-first-order-model">Sparsify first-order model</a></h2>
+
+<p>
+The second order sparse model worked so well that I went back
+and sparsified the first-order Markov model too.
+Comparing the two shows that the performance is identical.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>07</td>
+      <td>(10) 96</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>(10) 96</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Actually when I first ran these, the performance was NOT identical.
+It was a head scratcher for me until a found a bug where I was setting
+ther error detection threshold in two different places and the two did
+not agree. It's another illustration of how testing and double checking
+things that should obviously work is a great way to surface subtle bugs
+in your code. And there is <em>always</em> another bug.
+</p>
+
+<h2><a id="Reporting"></a><a href="#Reporting">Reporting</a></h2>
+
+<p>
+At this point the reporting table is growing large enough to merit splitting
+into a performance table and a model summary table. Also, the variants
+are proliferating, so it's helpful to keep track of the characterics
+of each model so that patterns in what works, and doesn't work, can
+start to emerge.
+</p>
+
+<p>
+Here's what a sample of the model table and eval table look like
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>model</th>
+      <th>description</th>
+      <th>tokenizer</th>
+      <th>alphabet</th>
+      <th>books</th>
+      <th>error cutoff</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>09</td>
+      <td>somm_04</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>06</td>
+      <td>10k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>somm_05</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>07</td>
+      <td>5k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>fomm_03</td>
+      <td>sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>416</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>somm_06</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>08</td>
+      <td>2k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>somm_07</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>09</td>
+      <td>1k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>09</td>
+      <td>(6) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>(7) 100</td>
+      <td>(7) 94</td>
+      <td>(7) 100</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>(10) 96</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>(11) 98</td>
+      <td>(9) 88</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>(17) 92</td>
+      <td>(12) 74</td>
+      <td>(16) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<h2><a id="Registry"></a><a href="#Registry">Registry</a></h2>
+
+<p>
+In fact the work is also reaching the point where pulling out information about
+each model and how it was trained can be confusing and error-prone.
+It is far me far beyond the point where I can just hold it all in my head.
+Tracking model versions, variants, experiments, and their characteristics
+is the job of a Registry. There are vendors ready to sell you ML Registry
+products that have a lot of convenient features, but for a project of this
+size all we need is a file where these things are written down.
+</p>
+
+<p>
+I created a few version tracking files. There is now
+</p>
+
+<ul>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/registry.py">one for proofreader versions</a></li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/models/tokenizer/registry.py">one for tokenizer versions</a></li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/models/fomm/registry.py">one for first order Markov model versions</a></li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/models/somm/registry.py">one for second order Markov model versions</a></li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/models/random/registry.py">one for random model versions</a> and</li>
+<li> <a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/data_registry.py">one for training data corpuses</a></li>
+</ul>
+
+<p>
+Having separate files for each, distributed across the repo nearby the
+artifacts they are tracking, greatly simplified and robustified
+the process of retrieving and collating information to make the
+reporting charts. It was also a helpful data modeling exercise,
+thinking through which tidbits belong where. For instance, whether
+<code>error_threshold</code> is a characteristic of a Markov model or a proofreader.
+</p>
+
+<p>
+These "registries" lack all of the convenience tooling for automatic
+generation and population. I have to manually create each entry.
+But the record they provide has already proven quite useful.
+</p>
+
+<h2><a id="New-eval:-Grammar"></a><a href="#New-eval:-Grammar">New eval: Grammar</a></h2>
+
+<p>
+I will continue to eat my vegetables and add a new eval at each stage.
+This time it is grammar. Things like verb tense, pronoun-antecedent
+agreement, and preposition choice. As I went about injecting errors
+into sample text, I found it hard to distinguish between purely
+grammatical errors and errors of word choice, another category I planned
+to create an eval for. As a result the grammar eval also includes
+many examples of erroneous word choice.
+</p>
+
+<p>
+Nothing jumped out to me about the models' performance on the grammar eval.
+The models are all hypersensitive and fire off false positives far
+too often to be anything approaching useful. But after this round of
+machinations, there are a stable of 13 models and four evals, summarized
+thus:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>grammar</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>01</td>
+      <td>(10) 18</td>
+      <td>(12) 16</td>
+      <td>(12) 24</td>
+      <td>(6) 12</td>
+    </tr>
+    <tr>
+      <td>02</td>
+      <td>(7) 98</td>
+      <td>(8) 100</td>
+      <td>(7) 98</td>
+      <td>(7) 98</td>
+    </tr>
+    <tr>
+      <td>03</td>
+      <td>(6) 100</td>
+      <td>(7) 96</td>
+      <td>(6) 94</td>
+      <td>(6) 98</td>
+    </tr>
+    <tr>
+      <td>04</td>
+      <td>(8) 100</td>
+      <td>(10) 100</td>
+      <td>(8) 98</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>05</td>
+      <td>(8) 100</td>
+      <td>(8) 94</td>
+      <td>(7) 90</td>
+      <td>(7) 96</td>
+    </tr>
+    <tr>
+      <td>06</td>
+      <td>(4) 100</td>
+      <td>(5) 100</td>
+      <td>(4) 100</td>
+      <td>(4) 100</td>
+    </tr>
+    <tr>
+      <td>07</td>
+      <td>(10) 96</td>
+      <td>(12) 98</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>08</td>
+      <td>(6) 100</td>
+      <td>(6) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+    <tr>
+      <td>09</td>
+      <td>(6) 100</td>
+      <td>(7) 100</td>
+      <td>(6) 98</td>
+      <td>(6) 100</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>(7) 100</td>
+      <td>(8) 100</td>
+      <td>(7) 94</td>
+      <td>(7) 100</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>(10) 96</td>
+      <td>(12) 98</td>
+      <td>(9) 94</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>(11) 98</td>
+      <td>(11) 92</td>
+      <td>(9) 88</td>
+      <td>(10) 100</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>(17) 92</td>
+      <td>(15) 78</td>
+      <td>(12) 74</td>
+      <td>(16) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Performance values are shown as: (precision %) recall %
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>model</th>
+      <th>description</th>
+      <th>tokenizer</th>
+      <th>alphabet</th>
+      <th>books</th>
+      <th>error cutoff</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>01</td>
+      <td>random_00</td>
+      <td>random baseline</td>
+      <td>None</td>
+      <td>0k</td>
+      <td>0</td>
+      <td>0.05</td>
+    </tr>
+    <tr>
+      <td>02</td>
+      <td>fomm_00</td>
+      <td>1st-order Markov</td>
+      <td>00</td>
+      <td>20k</td>
+      <td>10</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>03</td>
+      <td>somm_00</td>
+      <td>2nd-order Markov</td>
+      <td>04</td>
+      <td>1k</td>
+      <td>10</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>04</td>
+      <td>fomm_01</td>
+      <td>1st-order Markov</td>
+      <td>00</td>
+      <td>20k</td>
+      <td>20</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>05</td>
+      <td>somm_01</td>
+      <td>2nd-order Markov</td>
+      <td>04</td>
+      <td>1k</td>
+      <td>20</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>06</td>
+      <td>somm_02</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>00</td>
+      <td>20k</td>
+      <td>20</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>07</td>
+      <td>fomm_02</td>
+      <td>1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>416</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>08</td>
+      <td>somm_03</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>09</td>
+      <td>somm_04</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>06</td>
+      <td>10k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>somm_05</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>07</td>
+      <td>5k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>fomm_03</td>
+      <td>sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>416</td>
+      <td>0.0005</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>somm_06</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>08</td>
+      <td>2k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>somm_07</td>
+      <td>sparse 2nd-order Markov</td>
+      <td>09</td>
+      <td>1k</td>
+      <td>416</td>
+      <td>1e-08</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<h2><a id="Next-steps"></a><a href="#Next-steps">Next steps</a></h2>
+
+<p>
+The round of improvements pushed Artisanal Language Model for
+proofreading ahead a little, but there is still much to do. Then next
+obvious step is to get a lot more data, but in a way that is consistent
+with the goals of ALMs. And after that explore the next round of models.
+</p>
+    ]]></description>
+  </item>
+
+
+  <item>
+    <title>
     Artisanal Language Model v3: Second-order Markov model
     </title>
     <link>
@@ -1630,602 +2469,5 @@ model to detect misspelled words.
     ]]></description>
   </item>
 
-
-
-  <item>
-    <title>
-    Being a Staff+ Data Scientiest in 2026
-    </title>
-    <link>
-    https://brandonrohrer.org/ds_roles.html
-    </link>
-    <pubDate>
-    Thu, 09 Apr 2026 08:36:00 EDT
-    </pubDate>
-    <guid>
-    https://brandonrohrer.org/ds_roles.html
-    </guid>
-    <description><![CDATA[
-
-<p>
-I became a data scientist in 2013 when the title was young.
-It was so new that most companies had no idea what a data scientist should
-be doing, only that they desperately needed one or they would be left behind.
-Sound familiar?
-</p>
-
-<p>
-I've tried to survey the job description of data science a couple of times with
-varying degrees of success, most recently
-to go with
-<a href="https://github.com/brohrer/academic_advisory">some informal recommendations</a>
-for creating data science degree programs.
-Together with a group of colleages we tried to summarize
-<a href="https://github.com/brohrer/academic_advisory/blob/main/what_DS_do.md">what data scientists do</a>
-and <a href="https://brandonrohrer.com/data_science_archetypes.html">the data science subtypes of maker, oracle, detective, generalist</a>.
-But in the face of changing expectations this doesn't feel like enough
-anymore. It's time for a refresh.
-</p>
-
-<h2><a id="A-brief-and-biased-history-of-the-Data-Scientist-role"></a><a href="#A-brief-and-biased-history-of-the-Data-Scientist-role">A brief and biased history of the Data Scientist role</a></h2>
-
-<h3><a id="In-the-beginning..."></a><a href="#In-the-beginning...">In the beginning...</a></h3>
-
-<p>
-The field of data science was named in 1997,
-and the discipline has existed by other names
-for a very long time. After all,
-people have been answering questions using data for thousands of years.
-</p>
-
-<p>
-When data science first got huge, organizations expected
-data scientists to spin straw into gold&mdash;to transform
-unorganized data archives into profit. Big Data, it was believed,
-held inherent value, which only needed to be coaxed into cash form.
-This rarely panned out, so the
-approach evolved into a) data scientists produce "insights" and then
-b) "insights" generate profit. This also proved elusive in the end.
-Eventually data scientists settled into various niches involving
-<em>answering questions using data</em>, and some companies decided they didn't
-need as many data scientists as they had originally thought.
-</p>
-
-<h3><a id="The-Neural-Network-era"></a><a href="#The-Neural-Network-era">The Neural Network era</a></h3>
-
-<p>
-Then came the Neural Network revolution, where the machine learning
-hammer of choice became the convolutional neural network and many
-problems got recast as an image recognition problem. The software
-engineering, data engineering, and operations engineering that production
-CNNs required merited the job title of Machine Learning Engineer.
-Image recognition became synonymous with "modern machine learning".
-A data scientist's job description got blurry. Did it include ML
-Engineering as a subset? Should a good data scientist candidate have
-CNN experience? Every team took their own stance. No consensus emerged.
-</p>
-
-<h3><a id="The-age-of-Large-Language-Models"></a><a href="#The-age-of-Large-Language-Models">The age of Large Language Models</a></h3>
-
-<p>
-Then the spotlight abruptly shifted to Transformers and Large Language Models.
-With their massive scale, the engineering and operations requirements
-increased yet again. Only a small handful of enterprises are even
-capable of training such a model, and they accomplish this only with
-an army of engineers and an unfathomable amount of specialized computing
-power. LLMs are effectively black boxes. Their structure is known but their
-vast collection of parameters makes their behavior unpredictable and
-inexplicable. Using them is a matter of API calls, rather than
-training and evaluation. Most importantly, they are generative, rather than inductive. They
-don't actually answer questions, they create answer-looking things that
-are correct often enough to lull us into complacency.
-</p>
-
-<p>
-LLMs are far enough removed from a core data scientist's skillset that
-their care and feeding isn't part of the data science job description.
-But they can still have a big effect on a data scientist's day.
-(More on that below.)
-</p>
-
-<h3><a id="The-next-Big-Thing"></a><a href="#The-next-Big-Thing">The next Big Thing</a></h3>
-
-<p>
-The next hot new trend has not yet emerged, but if the historical 5 year cycle
-holds true, it's due any day now.
-</p>
-
-<h2></a>What is "data science"?</h2>
-
-<p>
-I define data science as "answering questions using data".
-Also note that I am referring to lowercase-d data science here.
-This can include job titles of Data Scientist, Data Analyst,
-Quantitative Analyst, Data Engineer, and others.
-I'm not including data-fueled features like product recommendations
-or travel time estimates, which are typically the domain of
-Machine Learning Engineers due to their scale and latency requirements.
-These are typically dominated by a separate set of constraints, tools,
-and skills (although there is plenty of overlap).
-</p>
-
-<p>
-The questions data scientsts get to wrestle with are varied, and they
-map closely to a company's org structure. Here are some greatest hits.
-</p>
-
-<h4><a id="Product"></a><a href="#Product">Product</a></h4>
-
-<ul>
-<li> Personalization: Which one should I show you?</li>
-<li> Tip/donation recommendation: What suggestions should I give someone for how
-much to give?</li>
-<li> Product experience: Which pages do users visit? What buttons to they click?
-What features do they use? What does this tell us about how we can improve
-their experience?</li>
-<li> Demand forecasting: How many people will buy my product next year?</li>
-</ul>
-
-<h4><a id="Operations"></a><a href="#Operations">Operations</a></h4>
-
-<ul>
-<li> Optimization: Which plan is the best? How can I minimize inventory?</li>
-</ul>
-
-<h4><a id="Marketing"></a><a href="#Marketing">Marketing</a></h4>
-
-<ul>
-<li> Price optimization: How much should I charge this customer for this thing or
-service?</li>
-<li> Marketing Mix Modeling: What is the return on investment for each additional
-dollar spent in each of my marketing channels?</li>
-</ul>
-
-<h4><a id="Finance"></a><a href="#Finance">Finance</a></h4>
-
-<ul>
-<li> Forecasting: What will our revenue and expenses be next quarter?</li>
-</ul>
-
-<h4><a id="All-organizations"></a><a href="#All-organizations">All organizations</a></h4>
-
-<ul>
-<li> Decision support: Which choice should I make?</li>
-<li> Experimentation: Which version is better?</li>
-</ul>
-
-<h2><a id="What-about-staff+-data-scientists?"></a><a href="#What-about-staff+-data-scientists?">What about staff+ data scientists?</a></h2>
-
-<p>
-A well-defined technical problem, including all those listed above, are
-an excellent fit for the skills of a new data scientist or one with 3-5
-years experience. These are quite challenging, but they are all
-challenges you can train for and practice on.
-They have fairly clear demands and success criteria.
-</p>
-
-<p>
-Just like every other part of technology, the very hardest part is people.
-In data science, this takes the form of understanding what people want,
-setting their expectations, and coordinating misaligned or competing incentives.
-Being familiar with sophisticated tools and approaches is definitely valuable,
-but is often something that a data scientist with a couple years of experience
-can do an excellent job on. As a staff+ you can still expect to tackle some
-of the most challenging or time-sensitive technical tasks, but those
-will probably not be the toughest part of your job.
-It falls to staff+ data folks to navigate
-the uncharted and shifting terrain of stakeholder management, cross-team
-coordination, and communication.
-(I'm using "staff+" to refer to staff level and higher, typically
-folks who have been at it 5 to 7 years or more, although the actual time
-in the role varies widely.)
-</p>
-
-<p>
-Most of these are struggles that data scientists have faced since
-the beginning. Often, one of the biggest contributions that a staff+
-data scientist can make is to be a bridge between data science work
-and the rest of the org&mdash;including engineers, marketing, finance, product, and
-C-suite officers of all stripes. Staff+ data scientists are expected
-to take the ambiguity out of the message, for instance translating what a
-probability distribution means for reporting quarterly performance.
-</p>
-
-<p>
-Here are the stickiest recurring topics I've been hearing about.
-</p>
-
-<h2><a id="When-stakeholders-prefer-a-cheap,-fast-wrong-answer-to-a-good-one"></a><a href="#When-stakeholders-prefer-a-cheap,-fast-wrong-answer-to-a-good-one">When stakeholders prefer a cheap, fast wrong answer to a good one</a></h2>
-
-<p>
-The biggest impact of AI (large language model) assistants on data science
-is the idea that anyone can query data with natural language Q-and-A.
-Sadly the reality of such systems is that they are trained on data
-that doesn't share the same set of quirks that your
-org is working with. It produces condifent, plausible answers 100% of the
-time, but they are accurate only 70% of the time, and the problem is that
-you can't know whether a particular answer is in the 30% until you
-dive in and re-create the analysis yourself.
-</p>
-
-<p>
-There is a school of thought that being confident and fast is better than
-being cautious and correct.
-It has bled over from strategic leadership (where
-ambiguity is ubiquitous and one of the greatest risks is indecision)
-to analysis and engineering (where incaution can lead to loss of limb,
-life, and cash). And in most large organizations individual stakeholders
-don't get to feel the effects of being wrong. Those usually take time to
-materialize. So they can prioritize being fast and confident, which
-their AI-assisted analytics queries are all too happy to help them out with.
-</p>
-
-<p>
-In almost every case, the overriding concern is not accuracy or rigor,
-but rather someone rationally pursuing what is best for them and their team.
-One of the hardest things a staff+ data scientist will ever have to do
-is build a mental model of these incentives and chart a course that
-successfully splits the difference
-<a href="https://en.wikipedia.org/wiki/Between_Scylla_and_Charybdis">between Scylla and Charybdis</a>.
-</p>
-
-<h2><a id="When-stakeholders-undervalue-the-skill-and-underestimate-the-time-required"></a><a href="#When-stakeholders-undervalue-the-skill-and-underestimate-the-time-required">When stakeholders undervalue the skill and underestimate the time required</a></h2>
-
-<p>
-A closely related trend is a common assumption that data analysis has
-somehow gotten easier and faster, so much so that it is disposable.
-Randy Au calls this
-<a href="https://www.counting-stuff.com/data-work-in-the-fast-fashion-code-era/">"data work in the fast fashion code era"</a>.
-It's no big deal to extract nuanced insights from your collected data,
-just feed it in to NotebookLM and ask, right? You should be able to have
-something by this afternoon right? Not the full analysis of course, but
-"rough numbers". Right?
-</p>
-
-<p>
-I can't even come up with a rough number of the times I've had the conversation
-that "rough numbers" are very rough indeed. Not just off by a few percent,
-but maybe in the completely wrong direction. And there's no way to know for
-sure until you go back and do the careful numbers.
-</p>
-
-<p>
-It doesn't help that questions that seem easy are actually hard to answer well.
-What caused this blip on this graph? Why didn't this feature boost engagement
-metrics? It seems natural that there should be simple answers to these
-questions, and obvious that someone familiar with the data should be able to
-pull them out quickly. So when a data scientist starts talking about the
-philosophical foundations of causality, and questioning whether we can really
-know whether anything causes anything, you can literally feel the eye-rolling
-of the product leader even if their camera is off.
-</p>
-
-<h2><a id="I-want-it-now"></a><a href="#I-want-it-now">I want it now</a></h2>
-
-<p>
-In a separate but related issue, stakeholders are sometimes reluctant to invest
-the time required to get high quality results. Bullish demands for unrealistic
-timelines have somehow become confused with strong leadership.
-Conveying the return on that time investment is a recurring challenge.
-How do you communicate the importance of carefully gathered data?
-the return on a carefully run experiment? the cost of accurately attributing
-a metric shift to a product change?
-How do you advocate for six-month-plus time investments in
-a company that never looks more than three months ahead?
-And heaven help you if you are trying to make a case for improving
-the robustness of your pipelines or pre-emptively cleaning your data.
-</p>
-
-<p>
-Learning things from data can be expensive. A carefully constructed
-experiment takes time to plan and execute, particularly when data volumes
-are low. There is a certain philosophy amongst some leaders that everything
-should be experimented on, and than an experiment with a positive outcome
-should be required before any change is made, no matter how small.
-Communicating the opportunity cost of running an experiment is a regularly
-occurring challenge. Leaders also may be seeking to proactively defend
-themselves against challenges to a given decision by having receipts,
-a successful experiment to point back to if their judgment is questioned.
-</p>
-
-<h2><a id="Real-time-dashboards"></a><a href="#Real-time-dashboards">Real-time dashboards</a></h2>
-
-<p>
-One particular example of "I want it now" is common enough to call out on its
-own: The up-to-the-minute data dashboard. The sense of power it gives is
-intoxicating, so it's no surprise that it is such a commonly requested
-data product.
-</p>
-
-<p>
-How do you communicate the cost of real time data availability?
-On the surface, it seems like a reasonable request.  A leader looking at
-a dashboard is like a pilot in the cockpit of a fighter jet.
-They can see their instruments, look out the windows, and use all
-the information at their fingertips to make quick decisions and save the day.
-Of course they would want that information to be real time.
-If it were delayed, then they might miss critical opportunities
-and get shot down.
-</p>
-
-<p>
-But an analytics dashboard is different than a fighter cockpit in more
-than one way. The world it’s representing doesn’t meaningfully change
-from one second to the next unless you’re doing high-speed trading.
-In most cases, it barely changes from one day to the next. When that’s
-the case, real time updates feel useful, but don’t deliver any
-actionable information.
-</p>
-
-<p>
-More importantly, the decisions that get made based on those dashboards
-don’t get made minute-to-minute or even hour-to-hour. They are
-typically decisions that factor into quarterly planning
-or sprint planning&mdash;decisions that occur every few months or weeks.
-Maybe every few days. Because of that, having the dash more update
-frequently this does not drive better decisions.
-</p>
-
-<p>
-The engineering effort required to go from nightly updates to few-second
-latency are considerable. Nightly updates, or even hourly, can be done by
-some DAG-based pipeline orchestror. It operates on tables and produces tables,
-which are easy to read and write to in code. Real time updates involve
-using stream technology, like Kafka or Flink. These are amazing when you
-need them, but they have many more moving parts, more things that can break,
-more things that you have to keep an eye on, more things that can cause
-the pipeline to go down and the dashboard to get wonky and
-require laborious backfills and carefully worded responses to frustrated
-questions from leaders about why their nerve center dashboard suite
-has gone down. To operate at the same reliability, it might require
-3 to 5 times the effort and dollars.
-</p>
-
-<p>
-This is a conversation that most staff+ data scientists end up having
-at least once in their careers. And they usually lose.
-</p>
-
-<h2><a id="The-perrenial-promise-of-self-serve"></a><a href="#The-perrenial-promise-of-self-serve">The perrenial promise of self-serve</a></h2>
-
-<p>
-Every data science organization I've worked in has gone through this cycle:
-</p>
-
-<ol>
-<li> Data scientists generate useful results</li>
-<li> Stakeholders find them valuable</li>
-<li> Stakeholders ask for more such results, with increasing frequency</li>
-<li> Data scientists get tired of running similar queries over and over</li>
-<li> A "self-serve analytics" function is proposed</li>
-</ol>
-
-<p>
-I've never seen this approach solve the original problem of getting stakeholders
-all the information they need without burdening the data scientists.
-One of these things happens instead.
-</p>
-
-<ul>
-<li> a basic self-serve system is fielded, which inevitably leads to follow-up
-questions outside of its scope. Data scientists are answering more questions than ever.</li>
-<li> a complex self-serve system is fielded, which requires stakeholders to
-learn a querying language, like SQL or a simplified version of it.
-They don't, and data scientists remain in the role of human user interface.</li>
-<li> data scientists get deep into building an intuitive, highly capable
-self-serve system. The project scope is large and occupies all of their
-attention and is never quite finished.
-They aren't available to field query questions of any sort.</li>
-</ul>
-
-<h2><a id="Communicating-uncertainty"></a><a href="#Communicating-uncertainty">Communicating uncertainty</a></h2>
-
-<p>
-Statistics, the native language of the data scientist, is all about
-distributions. But decisions get made based on concrete values.
-A business decision maker may have a rule of thumb in their head like
-“If the cost is less than three dollars, buy it, otherwise pass”.
-So they ask a data scientist, how much it will cost.
-</p>
-
-<p>
-DS: About three and a half dollars.
-</p>
-
-<p>
-BDM: What do you mean "about"? What will the actual price be?
-</p>
-
-<p>
-DS: Between two and five dollars.
-</p>
-
-<p>
-BDM: That’s a huge range. But you’re saying it definitely won’t be less
-than two dollars? And definitely not more than five?
-</p>
-
-<p>
-DS: Well, no, it might be less than two or more than five.
-But it probably won’t.
-</p>
-
-<p>
-BDM: <em> Reaches for magic eight ball </em>
-</p>
-
-<p>
-Translating from the fuzzy smear of a probability distribution
-to concrete values to support decision making is one of the hardest things
-a data scientist has to do. The two representations are fundamentally
-mismatched, and the mental models required to reason about them are
-nearly irreconcilable.
-</p>
-
-<p>
-If your audience is familiar with gambling, this gives some useful
-footholds like over-under and  odds ratios. Even better if they are
-familiar with rolling 20-sided dice. You can also try using percentages,
-statistical significance, confidence intervals, and upper/lower bounds,
-and see which you have the greatest success with.
-</p>
-
-<p>
-The more senior you get as a data scientist, the more of these conversations
-you end up having, talking with people who haven’t spent years
-building mental models of distributions.
-This conversation is a recurring one. Some version of it occurs with every
-analysis, and every decision. Bridging this gap well is what lets
-the hard work of a data science team carry maximum weight in the rest
-of the company. Learning to do it well is well worth it.
-</p>
-
-<h2><a id="Building-within-team-consensus-on-how-things-are-done"></a><a href="#Building-within-team-consensus-on-how-things-are-done">Building within-team consensus on how things are done</a></h2>
-
-<p>
-Closely related is helping data science teams communicate about
-uncertainty consistently within themselves. New career data scientists
-are usually taught frequentist null hypothesis significance testing.
-The <em>p</em> &lt; .05 threshold is drilled into them as an axiom. As a rule
-of thumb it’s useful, but as an iron law, it is limiting.
-Another very useful thing a staff+ data scientist can do is help
-the rest of the team look past the <em>p</em>-value and consider the context
-of the decision. Talking through the cost of false positives and
-false negatives, the likely distribution of classes in practice,
-the opportunity cost of running long experiments in order to reach
-significance, alternative ways of evaluating distributions
-for decision-making. Helping the whole team to level up and to speak
-the same language naturally falls on the staff+ data scientist
-as a technical leader.
-</p>
-
-<p>
-This work extends to coordinating definitions, tools, practices,
-and decision criteria more generally. There is tension between the
-scientific freedom of allowing everyone to use the analyses, statistical
-tools, modeling techniciques, presentation formats, and feature definitions
-that they prefer, and the chaos that brings about. The larger the data
-science team, the greater the chaos. Setting norms for these,
-particularly across multiple organizations, is a big undertaking and
-difficult to do in a way that doesn't feel heavy handed. Staff+
-data scientists that are able to pull this off are rare but their impact
-is huge.
-</p>
-
-<h2><a id="Collaboration-with-partner-teams"></a><a href="#Collaboration-with-partner-teams">Collaboration with partner teams</a></h2>
-
-<p>
-Data scientists work as a specialized piece of a larger machine.
-They work with
-data analysts to define data models and metric definitions. They work with
-data engineers to establish availability, freshness, data types, and
-standard transformations. They work with infrastructure engineers to make
-sure the data they need is accessible at reasonable latencies.
-They work with frontend engineers to make sure important events are
-instrumented and logged. They work with backend engineers to make sure
-important events are logged there as well and sometimes to pre-compute
-expensive features.
-</p>
-
-<p>
-Data scientists are part of an interconnected web and can only do what they do
-because of the other work that goes on around them. Coordinating with
-these teams, supporting them in turn, keeping those communication
-lines open and trust high.
-</p>
-
-<h2><a id="Designing-a-data-science-organization:-Centralized-vs-Distributed"></a><a href="#Designing-a-data-science-organization:-Centralized-vs-Distributed">Designing a data science organization: Centralized vs Distributed</a></h2>
-
-<p>
-At a certain level of seniority in a small company, you may be asked to help
-grow a data science team from scratch. Once the product team and the
-marketing team and the finance team all see how useful a data scientist can be,
-they'll each want their own team. A budding data science manager may prefer
-to keep the team together under one umbrella, perhaps in the same org as
-the analytics or the data engineering team. It is a recurring dilemma
-of central vs distributed data science teams.
-</p>
-
-<p>
-There is no right answer. Either can work <em>if</em> the organization is healthy
-and incentives are properly aligned.  If not, than <em>neither</em> will work well.
-But all else being equal, a central data science team that works closely
-with other teams is the easiest to pull off. It's good for getting
-data scientists the support they need and building capabilities
-that are applicable across the company. It's natural to morph into a
-matrixed arrangement from there, where a data scientist reports to their
-DS manager, but attends a lot of team meetings with the specific team
-they are embedded with.
-</p>
-
-<h2><a id="Delivering-Disappointing-Results"></a><a href="#Delivering-Disappointing-Results">Delivering Disappointing Results</a></h2>
-
-<p>
-Most leaders don’t like it when numbers disagree with their intuition
-or expectations. As much as they profess to be data-driven, more often
-than not they seek to be data-validated. If you get the answer they expect,
-they will accept and maybe celebrate it. If you come up with something
-surprising, disappointing, or uncomplimentary, they may push back,
-question assumptions, ask you to revisit it, suggest changes to the approach,
-or simply reject the result.
-</p>
-
-<p>
-There's no one size fits all answer to this, but here are some things to
-watch out for.
-</p>
-
-<ul>
-<li> Don't assume that the stakeholder will be persuaded by a rigorous and
-watertight analysis. They are balancing a lot of antagonistic concerns.
-Correctness is just one of them.</li>
-<li> Don't assume that the stakeholder wants to know that real answer.
-Sometimes the incentives to believe a difference answer are just too
-compelling.</li>
-<li> Don't assume that the stakeholder doesn't want to know the real answer.
-Pushback and follow up questions are a natural due diligence step.
-When a result is surprising and will require a lot of work to acknowledge, some
-questioning is appropriate.</li>
-<li> Don't assume the stakeholder is questioning your capabilities, motives,
-or integrity.</li>
-</ul>
-
-<p>
-Processing difficult analyses is a conversation, not a homework assignment
-where you get to stick it to the professor. It works best when you approach
-the leader as another human being who has their own biases, fears, and
-goals. Talk it through. Expect to walk them through the numbers, re-run them,
-examing your assumptions, and run some follow up analyses. More times than I
-care to admit, these pushback sessions have exposed my blindspots and
-resulted in more nuanced conclusions. At the very least, give the stakeholders
-space to mourn their lost hopes.
-</p>
-
-<p>
-<hr>
-</p>
-
-<p>
-This list isn't exhaustive of course. Every company and team has its own
-personality. But it gives a general flavor of the the life of a staff+
-data scientist in 2026. Have I sold you on it?
-</p>
-
-<h2><a id="The-good-bits-are-very-very-good"></a><a href="#The-good-bits-are-very-very-good">The good bits are very very good</a></h2>
-
-<p>
-With all of these sticky wickets, you might be wondering whether a
-career in data science is even worth it. What I haven’t mentioned yet
-is the upside, the marvelous feeling of being in the zone when your team
-is working together with other teams in synchrony, bridging the chasm
-between ones and zeros and the biggest decisions in the company.
-At the staff+ level, this is very similar to the Zen of a software engineer
-or a machine learning engineer who is in the zone, for all the same reasons.
-There’s nothing quite like it. It’s a satisfaction you feel somewhere
-deeply, somehwere just behind your sternum.
-You'll have to answer this question for yourself, but for me, yes, it’s worth it.
-</p>
-    ]]></description>
-  </item>
 </channel>
 </rss>

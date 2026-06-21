@@ -132,7 +132,9 @@ using these models.
 
 Writing evals is somewhat tedious so I'm spreading out the work,
 adding them in gradually. Here's what the updated results look like
-with punctuation added in.
+with
+[a punctuation eval](https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/evals/punctuation.py)
+added in.
 
 
 | model | name | capitalization | punctuation | spelling |
