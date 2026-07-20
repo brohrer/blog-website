@@ -7,6 +7,1119 @@
 
   <item>
     <title>
+    Artisanal Language Model v14: The Search for Data
+    </title>
+    <link>
+    https://brandonrohrer.org/alms_data.html
+    </link>
+    <pubDate>
+    Mon, 20 Jul 2026 04:36:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.org/alms_data.html
+    </guid>
+    <description><![CDATA[
+
+<p>
+<a href="alms_somm_sparse.html">The last installment</a> left off with both the first-
+and second-order models showing a powerful thirst for more training data.
+After consideration, I realized that for the types of errors I want the
+proofreader to identify aren't unique to sci-fi books. The basics of
+spelling and grammar are mostly the same across all English prose.
+</p>
+
+<p>
+It took a little time to figure out how to properly download Project
+Gutenberg texts at scale, but I finally set up three new training corpuses:
+</p>
+
+<ul>
+<li> All the English science fiction texts I could gather (2,032 books)</li>
+<li> All the English fiction texts I could gather (14,382 books)</li>
+<li> All the English texts I could gather (38,673 books)</li>
+</ul>
+
+<p>
+These were used to train three different first-order models that
+were otherwise identical.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>model</th>
+      <th>description</th>
+      <th>tokenizer</th>
+      <th>alphabet</th>
+      <th>books</th>
+      <th>error cutoff</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>19</td>
+      <td>04</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>2032</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>05</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td>07</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>38673</td>
+      <td>1e-08</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+With these results across the four existing evals.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>grammar</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>19</td>
+      <td>(15) 56</td>
+      <td>(22) 66</td>
+      <td>(12) 42</td>
+      <td>(19) 70</td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>(30) 20</td>
+      <td>(54) 30</td>
+      <td>(33) 18</td>
+      <td>(35) 24</td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td>(47) 14</td>
+      <td>(59) 20</td>
+      <td>(36) 10</td>
+      <td>(31) 10</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Performance values are shown as: (precision %) recall %
+</p>
+
+<p>
+As the amount of training text increased, so did the precision. If the
+model noticed something surprising, it was more likely to be an actual
+error if the model had a larger training corpus. The more text the model
+had seen, the better it got at only finding errors.
+</p>
+
+<p>
+On the flip side, the more training data a model had, the more likely it
+was to dismiss an error because it had seen it somewhere before.
+Legitmate errors were skipped over. Recall
+got lower as training corpuses got larger.
+</p>
+
+<h2><a id="The-effect-of-error-thresholds"></a><a href="#The-effect-of-error-thresholds">The effect of error thresholds</a></h2>
+
+<p>
+This is a good thing! By increasing the error threshold from near zero,
+it's possible to adjust the trade-off between precision and recall.
+As the error threshold gets higher, it raises the bar for what the
+model considers normal. Even if a pattern has occurred once already, it can
+still be tagged as an error.
+</p>
+
+<p>
+This is illustrated by taking version 22, the first-order model trained
+on all Project Gutenburg English texts, and comparing to a collection of other
+models with varying error thresholds.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>model</th>
+      <th>description</th>
+      <th>tokenizer</th>
+      <th>alphabet</th>
+      <th>books</th>
+      <th>error cutoff</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>07</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>38673</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>27</td>
+      <td>07</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>38673</td>
+      <td>1e-07</td>
+    </tr>
+    <tr>
+      <td>23</td>
+      <td>07</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>38673</td>
+      <td>1e-06</td>
+    </tr>
+    <tr>
+      <td>28</td>
+      <td>07</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>38673</td>
+      <td>1e-05</td>
+    </tr>
+    <tr>
+      <td>24</td>
+      <td>07</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>38673</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>25</td>
+      <td>07</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>38673</td>
+      <td>0.001</td>
+    </tr>
+    <tr>
+      <td>26</td>
+      <td>07</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>38673</td>
+      <td>0.01</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>grammar</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>22</td>
+      <td>(47) 14</td>
+      <td>(59) 20</td>
+      <td>(36) 10</td>
+      <td>(31) 10</td>
+    </tr>
+    <tr>
+      <td>27</td>
+      <td>(50) 16</td>
+      <td>(61) 22</td>
+      <td>(36) 10</td>
+      <td>(31) 10</td>
+    </tr>
+    <tr>
+      <td>23</td>
+      <td>(55) 22</td>
+      <td>(67) 32</td>
+      <td>(39) 14</td>
+      <td>(39) 14</td>
+    </tr>
+    <tr>
+      <td>28</td>
+      <td>(33) 32</td>
+      <td>(61) 46</td>
+      <td>(27) 28</td>
+      <td>(30) 28</td>
+    </tr>
+    <tr>
+      <td>24</td>
+      <td>(16) 70</td>
+      <td>(20) 74</td>
+      <td>(16) 70</td>
+      <td>(15) 64</td>
+    </tr>
+    <tr>
+      <td>25</td>
+      <td>(8) 98</td>
+      <td>(10) 96</td>
+      <td>(9) 98</td>
+      <td>(8) 100</td>
+    </tr>
+    <tr>
+      <td>26</td>
+      <td>(5) 98</td>
+      <td>(6) 100</td>
+      <td>(5) 100</td>
+      <td>(5) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+As the error threshold moves from 10^-8 to 10^-2, the performance
+changes dramatically. Initially at 10^-8, <em>both</em> precision and recall climb.
+Then at around 10^-6 precision tops out, while recall continues to climb.
+10^-5 is a good point for balancing precision's fall with recall's climb.
+10^-4 has respectable recall values across the board, with precision being
+around 1 in 6. After that we see the patterns of earlier. Precision
+falls into the single digits while recall jumps up to 100. The model
+starts to shotgun tag anything that is less than common.
+</p>
+
+<h2><a id="Reporting-in-pictures"></a><a href="#Reporting-in-pictures">Reporting in pictures</a></h2>
+
+<p>
+The tables above and the paragraph of explanation that follows require
+a lot of mental steps to stitch together into a story. This is why
+plots were invented.
+</p>
+
+<p>
+Here is the same information, reformatted.
+</p>
+
+<p>
+<img alt="Eval performance changes as error threshold increases.
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_fomm.png">
+</p>
+
+<p>
+I added plotting code to the reporting function.
+The patterns that may have been apparent in the tables really pop out
+in the plots (at least to my brain). More than four rows in a table
+quickly turns into a wall of numbers. Especially as we start systematically
+varying aspects of the models, plots will help those patterns emerge.
+</p>
+
+<p>
+The plots show how recall starts in the single digits on the left and climbs
+to 100% on the right. Precision starts middle-to-low and climbs slightly
+before it starts descending to settle in at the single digits on the right.
+</p>
+
+<p>
+There is a nice
+crossover point at around 1e-5 for each of the evals, where recall and
+precision are roughly balanced. It can be shifted either direction to
+favor one over the other.
+</p>
+
+<h2><a id="Scaling-up-bookkeeping"></a><a href="#Scaling-up-bookkeeping">Scaling up bookkeeping</a></h2>
+
+<p>
+As is evident from the escalating version numbers, there is
+a rapidly-multiplying set of permutations of
+corpus/tokenizer/model/error threshold. The registry system I started
+using during the previous post required entering the version numbers of
+proofreader components in several different locations, which already
+resulted in a couple of errors.
+</p>
+
+<p>
+To get around this, I upgraded all the registries so that instead of
+just cataloguing the characteristics of a model, they actually linked
+to the model itself. That way the characteristcs, such as tokenizer
+version in use by a given Markov model, could be read from the model
+itself, rather than manually entered into an informational dictionary.
+This saved a lot of potential errors. As a bonus, it eliminates several
+of the steps necessary for specifying and testing a new model, which
+streamling I'm really appreciating right now.
+</p>
+
+<h2><a id="Shrinking-the-code-by-refactoring"></a><a href="#Shrinking-the-code-by-refactoring">Shrinking the code by refactoring</a></h2>
+
+<p>
+Another scaling consideration is that I had started out using a lot of
+individual scripts to create and train each individual model version.
+I had also been largely copy/pasting 99% of the code for each new
+proofreader. It was time to clear this up.
+</p>
+
+<p>
+Object-oriented programming made this possible.
+I made sure everything was a class, including the random baseline
+model which was trivial and didn't need to be one. Then I collapsed all of
+the parameters necessary to create each new element into the class'
+initialization arguments. At that point, it was possible to define and
+create the model object in a single call to the class. These model
+creation calls became the new registry, for example
+</p>
+
+<p>
+<pre>
+registry = {
+    "00": SecondOrderMarkovModel(
+        version="00",
+        tokenizer_version="04",
+        corpus_versions=["00"],
+        description="2nd-order Markov",
+    ),
+    "01": SecondOrderMarkovModel(
+        version="01",
+        tokenizer_version="04",
+        corpus_versions=["00", "01"],
+        description="2nd-order Markov",
+    ),
+    "02": SparseSecondOrderMarkovModel(
+        version="02",
+        tokenizer_version="00",
+        corpus_versions=["00", "01"],
+        description="Sparse 2nd-order Markov",
+    ),
+...
+</pre>
+</p>
+
+<p>
+Registries are still Python dictionaries. This change also required
+some careful thinking about when models would actually be loaded into
+memory and when training would kick off for untrained models.
+Collectively the models are too big to all reside in memory at once.
+(The largest are 12GB on disk, and I only have 16 GB of RAM.) If they
+were to all load when the registry gets loaded that would overload
+things. Also, training times for some models are many hours long.
+Kicking these off unintentionally would be undesirable. I made sure
+that loading and training were lazy, that is, that they don't
+train or load until they absolutely have to in order to calculate probabilities.
+</p>
+
+<h2><a id="Extending-to-second-order-models"></a><a href="#Extending-to-second-order-models">Extending to second-order models</a></h2>
+
+<p>
+The contraints of memory and training time become more intense when working
+with second-order models. Back when these were dense arrays, we saw how
+memory demands jumped from the square to the cube of alphabet size.
+Infeasibly large for most of the alphabets the tokenizers are working with.
+There is a similar dynamic with dictionaries. The number of
+unique token triples outnumbers the number of unique token pairs by many times.
+Not quite by a factor of the alphabet size, since not all possible triples
+occur, but by some significant fraction of it. We can no longer ignore
+the constraints of memory.
+</p>
+
+<p>
+Memory constraints exacerbate another problem, training time. Once physical
+memory is overextended, the system starts swapping in disk space to cover
+the difference, which is desperately, painfully slow in comparison.
+There are other drags on training time that bear investigation later,
+but this is the one that hurts the most.
+</p>
+
+<h2><a id="OK-but-not-great:-Moving-to-SQLite-databases"></a><a href="#OK-but-not-great:-Moving-to-SQLite-databases">OK-but-not-great: Moving to SQLite databases</a></h2>
+
+<p>
+The first thing I tried was tracking the bigram and trigram counts in
+a <a href="https://sqlite.org/index.html">SQLite database</a>, rather than
+a Python dictionary. I created a new variant of the second-order
+Markov model that was still sparse, but added or incremented the count
+of each tuple in a database row.
+<a href="https://codeberg.org/brohrer/proofread-eng-scifi/src/branch/main/src/proofread_eng_scifi/models/somm/somm.py">This file</a>
+shows how I implemented it.
+</p>
+
+<p>
+Using a database has the advantage that it can grow much larger than
+my RAM, as big as my whole hard drive if necessary. Sadly it comes
+with the disadvantage that it is reading to and writing from disk.
+It makes training very slow, even after I attempted to do some optimizations
+for speed. Database optimization is a dark art, and it's possible that there
+are some configurations that would make it snappy, but I couldn't figure them
+out. Even more problematic for the proofreading application, it looked
+like the reading would be sluggish too. That means even if I were patient
+enough for the training, the user experience of the final tool would be
+clunky and slow. I put a pin in this option. The lesson I (re)learned
+from this is that if you want something to be very fast, keep it all in RAM.
+It's worth noting that the speedy key-value stores backing serious
+architectures (e.g. DynamoDB) are all made to read from RAM.
+</p>
+
+<h2><a id="Better:-Size-limiting-the-tuple-dictionaries"></a><a href="#Better:-Size-limiting-the-tuple-dictionaries">Better: Size-limiting the tuple dictionaries</a></h2>
+
+<p>
+I went back to dictionaries with the goal of keeping them just small
+enough to fit in RAM. The new constrained second-order model
+has an upper limit on the number of trigrams it can track (these far
+outnumber the number of bigrams). Once it hits that limit it has to thin
+them out, and reduce them back down to a more manageable size.
+These two parameters, <code>max_dict_size</code> and <code>max_dict_size_after_shrink</code>,
+help determine exactly how the model behaves, and become part of
+its short list of specification, also known as hyperparameters.
+</p>
+
+<p>
+The way the memory-constrained model stays trim is to drop triples
+that are only rarely observed. If a token triple has been seen a thousand
+times, it is clearly a common occurrence in the world. But if it has only
+been seen once, there is a good chance that it is a fluke. So if we have
+to drop something, it makes sense to let it be the least-observed items.
+This amounts to a lossy compression of the model, chopping off some of
+the less critical information while preserving the most important bits.
+</p>
+
+<p>
+The model goes about this systematically by first dropping all the
+triples that have been seen once. Then it checks whether it has fallen
+below <code>max_dict_size_after_shrink</code>. If not, it drops everything it has
+only observed twice. This process repeats until the model gets small
+enough to pass the reduced size threshold. Then it resumes training.
+</p>
+
+<p>
+After some exploration, trial, and error showed that for my computer
+(16GB, Apple M2 Pro) <code>max_dict_size = 5e7</code> and
+<code>max_dict_size_after_shrink = 4e7</code> gave maximum model size without
+bogging down training. That works out to roughly 1 GB per 10 million
+tuples, or 100 bytes per tuple. That still feels pretty inefficient to
+me, since the count value will be at most an 8-byte integer. It looks
+like most of the space goes to the key (a tuple of integers) and any
+overhead the python dictionary object occupies. I'm noting that
+space efficiency is an area to explore for future improvements.
+</p>
+
+<h2><a id="Performance-of-second-order-models"></a><a href="#Performance-of-second-order-models">Performance of second order models</a></h2>
+
+<p>
+But the good news is that I can now train second-order Markov models on
+arbitrarily large data sets! And the bad news is that it doesn't seem
+to help much, at least not at first.
+A second-order model with an alphabet size of 20k,
+trained on a library of 14.4 thousand books never gets precision into
+the double digits.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>description</th>
+      <th>model</th>
+      <th>tokenizer</th>
+      <th>alphabet</th>
+      <th>books</th>
+      <th>error cutoff</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>47</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>21</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>1e-08</td>
+    </tr>
+    <tr>
+      <td>48</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>21</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>1e-07</td>
+    </tr>
+    <tr>
+      <td>49</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>21</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>1e-06</td>
+    </tr>
+    <tr>
+      <td>50</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>21</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>1e-05</td>
+    </tr>
+    <tr>
+      <td>42</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>21</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>51</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>21</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>0.001</td>
+    </tr>
+    <tr>
+      <td>52</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>21</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>0.01</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>grammar</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>47</td>
+      <td>(8) 94</td>
+      <td>(10) 92</td>
+      <td>(8) 94</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>48</td>
+      <td>(8) 94</td>
+      <td>(10) 92</td>
+      <td>(8) 94</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>49</td>
+      <td>(8) 94</td>
+      <td>(10) 92</td>
+      <td>(8) 94</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>50</td>
+      <td>(8) 94</td>
+      <td>(10) 96</td>
+      <td>(8) 94</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>42</td>
+      <td>(8) 96</td>
+      <td>(10) 96</td>
+      <td>(8) 96</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>51</td>
+      <td>(7) 100</td>
+      <td>(8) 98</td>
+      <td>(7) 96</td>
+      <td>(7) 100</td>
+    </tr>
+    <tr>
+      <td>52</td>
+      <td>(6) 100</td>
+      <td>(7) 100</td>
+      <td>(5) 100</td>
+      <td>(5) 100</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Performance values are shown as: (precision %) recall %
+</p>
+
+<p>
+This means that too many things are new to it. It gets shocked every time
+it turns a corner because it has never seen that exact combination of
+tokens before.
+</p>
+
+<h2><a id="Experimenting-with-smaller-dictionaries-in-second-order-models"></a><a href="#Experimenting-with-smaller-dictionaries-in-second-order-models">Experimenting with smaller dictionaries in second-order models</a></h2>
+
+<p>
+One way to help the model get surprised less easily is to reduce its
+world to a more manageable size. With a tokenizer vocabulary of
+20,000, there are 8 trillion possible triples. But at a vocab size
+of 1,000 that comes down to 1 billion possibilities. And at a
+vocab size of 200, that becomes a measly 8 million possible
+triples.
+</p>
+
+<p>
+This is reflected in the second-order model's performance as vocabulary
+shrinks. Recall falls, meaning that it misses more and more of the
+actual errors. But precision climbs, meaning that when it does declare
+something an error its more likely to be right.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>description</th>
+      <th>model</th>
+      <th>tokenizer</th>
+      <th>alphabet</th>
+      <th>books</th>
+      <th>error cutoff</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>42</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>21</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>53</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>26</td>
+      <td>06</td>
+      <td>10k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>54</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>27</td>
+      <td>07</td>
+      <td>5k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>55</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>28</td>
+      <td>08</td>
+      <td>2k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>56</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>29</td>
+      <td>09</td>
+      <td>1k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>57</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>30</td>
+      <td>11</td>
+      <td>500</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>58</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>31</td>
+      <td>12</td>
+      <td>200</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>59</td>
+      <td>Constrained 2nd-order Markov</td>
+      <td>32</td>
+      <td>13</td>
+      <td>100</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>grammar</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>42</td>
+      <td>(8) 96</td>
+      <td>(10) 96</td>
+      <td>(8) 96</td>
+      <td>(8) 98</td>
+    </tr>
+    <tr>
+      <td>53</td>
+      <td>(10) 92</td>
+      <td>(12) 90</td>
+      <td>(9) 88</td>
+      <td>(9) 92</td>
+    </tr>
+    <tr>
+      <td>54</td>
+      <td>(14) 88</td>
+      <td>(13) 68</td>
+      <td>(11) 76</td>
+      <td>(12) 82</td>
+    </tr>
+    <tr>
+      <td>55</td>
+      <td>(25) 72</td>
+      <td>(26) 56</td>
+      <td>(19) 60</td>
+      <td>(21) 68</td>
+    </tr>
+    <tr>
+      <td>56</td>
+      <td>(51) 56</td>
+      <td>(27) 24</td>
+      <td>(40) 46</td>
+      <td>(36) 62</td>
+    </tr>
+    <tr>
+      <td>57</td>
+      <td>(66) 46</td>
+      <td>(50) 14</td>
+      <td>(58) 44</td>
+      <td>(49) 58</td>
+    </tr>
+    <tr>
+      <td>58</td>
+      <td>(62) 26</td>
+      <td>(50) 6</td>
+      <td>(76) 32</td>
+      <td>(69) 48</td>
+    </tr>
+    <tr>
+      <td>59</td>
+      <td>(75) 18</td>
+      <td>(100) 4</td>
+      <td>(78) 14</td>
+      <td>(62) 32</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Performance values are shown as: (precision %) recall %
+</p>
+
+<p>
+<img alt="Eval performance changes as tokenizer vocabulary increases.
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/perf_vocab_size_somm.png">
+</p>
+
+<p>
+This is huge progress! Having a model at roughly the 50/50 precision/recall
+mark as this one is means that it catches half of the errors and
+that of the errors it reports, half are legitimate. It's still not good enough
+for prime time, but this is a very solid step forward.
+</p>
+
+<h2><a id="Experimenting-with-smaller-dictionaries-in-first-order-models"></a><a href="#Experimenting-with-smaller-dictionaries-in-first-order-models">Experimenting with smaller dictionaries in first-order models</a></h2>
+
+<p>
+In the prior post, we saw
+<a href="alms_somm_sparse.html#Dictionary-size">this same pattern in performance</a>
+with changes in dictionary size in first-order models,
+but now we are in a better position
+to revisit it. There are a broader set of dictionaries to work with,
+larger training data sets, a better guess at a good error threshold,
+visual reporting, and a way to handle inconveniently large models.
+</p>
+
+<p>
+Matching the second-order model set above, this gets a similar pattern.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>description</th>
+      <th>model</th>
+      <th>tokenizer</th>
+      <th>alphabet</th>
+      <th>books</th>
+      <th>error cutoff</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>60</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>05</td>
+      <td>05</td>
+      <td>20k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>61</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>08</td>
+      <td>06</td>
+      <td>10k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>62</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>09</td>
+      <td>07</td>
+      <td>5k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>63</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>10</td>
+      <td>08</td>
+      <td>2k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>64</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>11</td>
+      <td>09</td>
+      <td>1k</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>65</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>12</td>
+      <td>11</td>
+      <td>500</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+    <tr>
+      <td>66</td>
+      <td>Sparse 1st-order Markov</td>
+      <td>13</td>
+      <td>12</td>
+      <td>200</td>
+      <td>14382</td>
+      <td>0.0001</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>grammar</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>60</td>
+      <td>(17) 76</td>
+      <td>(21) 78</td>
+      <td>(16) 72</td>
+      <td>(17) 70</td>
+    </tr>
+    <tr>
+      <td>61</td>
+      <td>(21) 68</td>
+      <td>(23) 70</td>
+      <td>(19) 66</td>
+      <td>(19) 62</td>
+    </tr>
+    <tr>
+      <td>62</td>
+      <td>(23) 54</td>
+      <td>(22) 52</td>
+      <td>(22) 54</td>
+      <td>(23) 52</td>
+    </tr>
+    <tr>
+      <td>63</td>
+      <td>(31) 50</td>
+      <td>(24) 30</td>
+      <td>(28) 46</td>
+      <td>(28) 44</td>
+    </tr>
+    <tr>
+      <td>64</td>
+      <td>(47) 42</td>
+      <td>(30) 16</td>
+      <td>(46) 42</td>
+      <td>(37) 36</td>
+    </tr>
+    <tr>
+      <td>65</td>
+      <td>(68) 34</td>
+      <td>(73) 16</td>
+      <td>(68) 38</td>
+      <td>(46) 24</td>
+    </tr>
+    <tr>
+      <td>66</td>
+      <td>(75) 18</td>
+      <td>(100) 6</td>
+      <td>(87) 26</td>
+      <td>(69) 18</td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Performance values are shown as: (precision %) recall %
+</p>
+
+<p>
+<img alt="Eval performance changes as tokenizer vocabulary increases.
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/perf_vocab_size_fomm.png">
+</p>
+
+<p>
+Again, the crossover point where precision equals recall
+tended to be in the neighborhood of a dictionary size of 1000.
+This is very promising. It suggests that we have a lot of freedom to
+adjust models' behavior and sensitivity by tweaking hyperparameters
+like alphabet size.
+</p>
+
+<p>
+It's also convenient, because it appears that, rather than using
+tokenizers with very large vocabularies, smaller ones are proving more
+effective with Markov models. This will save a mountain of memory space.
+</p>
+
+<h2><a id="Eval-expansion:-Adding-to-grammar/word-choice"></a><a href="#Eval-expansion:-Adding-to-grammar/word-choice">Eval expansion: Adding to grammar/word choice</a></h2>
+
+<p>
+It's time again to invest the tedious work to expand the eval set.
+Rather than kick off a new eval type, I chose to expand an existing
+eval with an additional 50 examples. This time I used a different text;
+instead of continuing with Frankenstein, I pulled snippets from
+Call of the Cthulhu. It's prose is a little more modern and less stilted,
+so it will help make the evals more representative.
+</p>
+
+<h2><a id="Next-steps"></a><a href="#Next-steps">Next steps</a></h2>
+
+<p>
+This last round of improvements have been especially gratifying.
+We're no long just laying foundations. The beginnings of the proofreader
+itself are starting to become visible. Performance is not great but is
+good enough to be interesting.
+</p>
+
+<p>
+The next round will focus on model enhancements. Of course there will
+be continued work on enriching the training data, refactoring to
+make the code as clear and usable as possible, adapting to the hardware
+limitations of artisanal development, building out the evals,
+and systematic exploration of varying hyperparameters. But these
+fundamentals are now strong enough to support exploring novel models.
+</p>
+
+<p>
+See you next time.
+</p>
+            
+    ]]></description>
+  </item>
+
+
+
+
+  <item>
+    <title>
     Artisanal Language Model v6: Sparse second-order Markov model
     </title>
     <link>
