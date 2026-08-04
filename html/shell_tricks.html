@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Shell tricks";</script>
+  <script type="text/javascript">var publication_date = "July 23, 2026";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+There are several command line incantations that I have had to look up
+at least a dozen times. I'm compiling a handy cheat sheet of them here. 
+</p>
+
+<p>
+These commands all work on my Mac, in the Terminal app running the shell zsh.
+I think most of them are directly portable to bash, but some will have
+small differences.
+</p>
+
+<p>
+To drill deeper on any of these run <code>man <command></code>. I find the examples
+section at the end most helpful.
+</p>
+
+<h2><a id="Finding-a-string-in-Python-files"></a><a href="#Finding-a-string-in-Python-files">Finding a string in Python files</a></h2>
+
+<p>
+<pre>
+grep -r --include \*.py 'string I am looking for' .
+</pre>
+</p>
+
+<ul>
+<li> <code>grep</code> finds strings</li>
+<li> <code>-r</code> drills down into directories recursively</li>
+<li> <code>--include \*.py</code> only checks files whose names end in <code>.py</code></li>
+<li> <code>'string I am looking for</code> is the string to look for</li>
+<li> <code>.</code> signals to start looking in the current directory</li>
+</ul>
+
+<h2><a id="Find-files-by-name"></a><a href="#Find-files-by-name">Find files by name</a></h2>
+
+<p>
+<pre>
+find . -name '&ast;partial_name&ast;'
+</pre>
+</p>
+
+<ul>
+<li> <code>find</code> finds files and directories recursively</li>
+<li> <code>.</code> says to start in the current directory and work down</li>
+<li> <code>-name '&ast;partial_name&ast;'</code> is an instruction to find anything that has
+  the string "partial_name" anywhere in its name.</li>
+</ul>
+
+<h2><a id="Find-and-replace-all-occurrences-of-a-string-in-a-directory's-Python-files"></a><a href="#Find-and-replace-all-occurrences-of-a-string-in-a-directory's-Python-files">Find and replace all occurrences of a string in a directory's Python files</a></h2>
+
+<p>
+<pre>
+sed -i '.bak' -e 's/old string/new string/g' *.py
+</pre>
+</p>
+
+<ul>
+<li> <code>sed</code> (stream editor) is a command to modify text</li>
+<li> <code>-i '.bak'</code> creates a backup copy of every modified file, using the extension
+   <code>.bak</code>. If you want to live dangerously you can skip backups by specitying
+   <code>-i ''</code>.</li>
+<li> <code>-e</code> instructs it to execute the command that follows</li>
+<li> <code>'s/old string/new string/g'</code> says to swap (<code>s</code>) the 
+    string <code>old string</code> for the string <code>new string</code> 
+    everywhere in the file, even if it occurs multiple times on the same
+    line (<code>g</code>)</li>
+<li> <code>*.py</code> says to do this for all Python files in the directory.</li>
+</ul>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>
