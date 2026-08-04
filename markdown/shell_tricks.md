@@ -7,7 +7,7 @@ These commands all work on my Mac, in the Terminal app running the shell zsh.
 I think most of them are directly portable to bash, but some will have
 small differences.
 
-To drill deeper on any of these run `man <command>`. I find the examples
+To drill deeper on any of these run `man &lt;command&gt;`. I find the examples
 section at the end most helpful.
 
 ## Finding a string in Python files
@@ -19,7 +19,7 @@ grep -r --include \*.py 'string I am looking for' .
 - `grep` finds strings
 - `-r` drills down into directories recursively
 - `--include \*.py` only checks files whose names end in `.py`
-- `'string I am looking for` is the string to look for
+- `'string I am looking for'` is the string to look for
 - `.` signals to start looking in the current directory
 
 ## Find files by name
