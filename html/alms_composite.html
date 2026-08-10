@@ -1,31 +1,29 @@
-<rss version="2.0">
-<channel>
-<title>Brandon Rohrer</title>
-<link>https://www.brandonrohrer.com</link>
-<description>Brandon Rohrer's blog</description>
+<!DOCTYPE html>
+<html>
 
-
-  <item>
-    <title>
-    Artisanal Language Model v68: Models get interesting
-    </title>
-    <link>
-    https://brandonrohrer.org/alms_composite.html
-    </link>
-    <pubDate>
-    Mon, 10 Aug 2026 04:36:00 EDT
-    </pubDate>
-    <guid>
-    https://brandonrohrer.org/alms_composite.html
-    </guid>
-    <description><![CDATA[
+  <script type="text/javascript">var blog_title = "Version 68: Models start getting funky";</script>
+  <script type="text/javascript">var publication_date = "August 10, 2026";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
 
 
 <p>
 We're coming into this installment with some good momentum, but despite that
 (because of that?) it's a good time to pause for some house cleaning.
 The sparse first-order models and second-order models with size limits
-work so much faster and smaller than everything that came before, that
+work so much faster and smaller than everything that came before, that 
 the earlier work can be safely set aside. Those failed experiments are
 relegated to the git history and cleaned out of the code, as are all
 references to them.
@@ -51,7 +49,7 @@ space on my hard drive. Some of the deprecated models, once trained, were
 enormous. 12 GB for the dense first-order models. I filled up my hard drive
 at several points during the last couple of posts and had to clean out
 discarded models. With the deprecation it allowed me to wipe all those
-from my disk and once again get some breathing room.
+from my disk and once again get some breathing room. 
 </p>
 
 <p>
@@ -137,8 +135,8 @@ sed -i '' -e 's/proofread_eng_scifi/proofread_eng/g' *.py
 <li> <code>-i ''</code> says not to create backups of the files before modification
     (living dangerously)</li>
 <li> <code>-e</code> instructs it to execute the command that follows</li>
-<li> <code>'s/proofread_eng_scifi/proofread_eng/g'</code> says to swap (<code>s</code>) the
-    string <code>proofread_eng_scifi</code> for the string <code>proofread_eng</code>
+<li> <code>'s/proofread_eng_scifi/proofread_eng/g'</code> says to swap (<code>s</code>) the 
+    string <code>proofread_eng_scifi</code> for the string <code>proofread_eng</code> 
     everywhere in the file, even if it occurs multiple times on the same
     line (<code>g</code>)</li>
 <li> <code>*.py</code> says to do this for all Python files in the directory.</li>
@@ -166,7 +164,7 @@ they need to go.
 I've been in the habit of procrastinating eval work until the end of each
 post, but then it just sits there unused until I get to the next one.
 This time I'm more disciplined. I'm kicking off a new eval right away.
-A common prose failure mode is a missing word, but it's not one that's
+A common prose failure mode is a missing word, but it's not one that's 
 well represented in the evals yet. It feels worthy of its own category,
 especially since it is a particular type of error and may prove harder
 for some models to detect than others.
@@ -284,7 +282,7 @@ that you may be mistaken." Today we rephrase that as
 </p>
 
 <p>
-A common way to steer clear of zero probability estimates is
+A common way to steer clear of zero probability estimates is 
 <a href="https://en.wikipedia.org/wiki/Additive_smoothing">additive smoothing</a>,
 where a number called a pseudocount is added to the numerator and
 denominator. To implement this in a classic way, known as
@@ -331,7 +329,7 @@ it doesn't estimate anything to be at or near zero.
 
 <p>
 Imagine that the first time token A is encountered it is followed by
-B. The count of A is 1, the count of B is 1, and the likelihood of
+B. The count of A is 1, the count of B is 1, and the likelihood of 
 B given A is (1 + 1)/(1 + 1) = 2/2 = 1. Still high. Still OK for our purposes.
 At that point, the likelihood of C given A is (0 + 1)/(1 + 1) = 1/2.
 It's still not zero or even very small, which is exactly what we want.
@@ -449,99 +447,12 @@ multiple models. We may have hit the limits of <code>minimum()</code>.
 <p>
 We'll see how that goes before deciding what to do next. This work has hit
 the exciting phase were it is exploring new ground, and we can only
-see a step or two ahead at most.
+see a step or two ahead at most. 
 </p>
 
-    ]]></description>
-  </item>
-
-
-  <item>
-    <title>
-    Useful bash/zsh tricks
-    </title>
-    <link>
-    https://brandonrohrer.org/shell_tricks.html
-    </link>
-    <pubDate>
-    Mon, 03 Aug 2026 06:36:00 EDT
-    </pubDate>
-    <guid>
-    https://brandonrohrer.org/shell_tricks.html
-    </guid>
-    <description><![CDATA[
-
-<p>
-There are several command line incantations that I have had to look up
-at least a dozen times. I'm compiling a handy cheat sheet of them here.
-</p>
-
-<p>
-These commands all work on my Mac, in the Terminal app running the shell zsh.
-I think most of them are directly portable to bash, but some will have
-small differences.
-</p>
-
-<p>
-To drill deeper on any of these run <code>man <command></code>. I find the examples
-section at the end most helpful.
-</p>
-
-<h2><a id="Finding-a-string-in-Python-files"></a><a href="#Finding-a-string-in-Python-files">Finding a string in Python files</a></h2>
-
-<p>
-<pre>
-grep -r --include \*.py 'string I am looking for' .
-</pre>
-</p>
-
-<ul>
-<li> <code>grep</code> finds strings</li>
-<li> <code>-r</code> drills down into directories recursively</li>
-<li> <code>--include \*.py</code> only checks files whose names end in <code>.py</code></li>
-<li> <code>'string I am looking for</code> is the string to look for</li>
-<li> <code>.</code> signals to start looking in the current directory</li>
-</ul>
-
-<h2><a id="Find-files-by-name"></a><a href="#Find-files-by-name">Find files by name</a></h2>
-
-<p>
-<pre>
-find . -name '&ast;partial_name&ast;'
-</pre>
-</p>
-
-<ul>
-<li> <code>find</code> finds files and directories recursively</li>
-<li> <code>.</code> says to start in the current directory and work down</li>
-<li> <code>-name '&ast;partial_name&ast;'</code> is an instruction to find anything that has
-  the string "partial_name" anywhere in its name.</li>
-</ul>
-
-<h2><a id="Find-and-replace-all-occurrences-of-a-string-in-a-directory's-Python-files"></a><a href="#Find-and-replace-all-occurrences-of-a-string-in-a-directory's-Python-files">Find and replace all occurrences of a string in a directory's Python files</a></h2>
-
-<p>
-<pre>
-sed -i '.bak' -e 's/old string/new string/g' *.py
-</pre>
-</p>
-
-<ul>
-<li> <code>sed</code> (stream editor) is a command to modify text</li>
-<li> <code>-i '.bak'</code> creates a backup copy of every modified file, using the extension
-   <code>.bak</code>. If you want to live dangerously you can skip backups by specitying
-   <code>-i ''</code>.</li>
-<li> <code>-e</code> instructs it to execute the command that follows</li>
-<li> <code>'s/old string/new string/g'</code> says to swap (<code>s</code>) the
-    string <code>old string</code> for the string <code>new string</code>
-    everywhere in the file, even if it occurs multiple times on the same
-    line (<code>g</code>)</li>
-<li> <code>*.py</code> says to do this for all Python files in the directory.</li>
-</ul>
-
-    ]]></description>
-  </item>
-
-
-</channel>
-</rss>
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>
