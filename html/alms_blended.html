@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+
+  <script type="text/javascript">var blog_title = "Version 183: Getting models to cooperate";</script>
+  <script type="text/javascript">var publication_date = "August 18, 2026";</script>
+  <head>
+    <link rel="icon" href="images/ml_logo.png">
+    <meta charset='utf-8'>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <base target="_blank">
+    <script src="javascripts/blog_head.js"></script>
+  </head>
+  <body>
+    <script src="javascripts/blog_header.js"></script>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+
+
+<p>
+We left off <a href="alms_composite.html">the previous episode</a> with some mixed
+results from combining forward and backward Markov models, but with
+some promising directions to explore. But before getting to that, I'm
+forcing myself to do the care and maintenance first.
+</p>
+
+<h2><a id="New-eval:-Extra-words"></a><a href="#New-eval:-Extra-words">New eval: Extra words</a></h2>
+
+<p>
+Another common category of typographical error is the extra word. Either
+duplicates or a half-completed thought that didn't get fully deleted or
+a self-correction during dictation,
+they come up a lot. It will help broaden the set of proofreading errors
+I expect my proofreader to catch. Also, there weren't enough eval
+categories to fill up two rows of three plots in the results, and that
+was bugging me. Now we'll two full rows. (Until next chapter.)
+</p>
+
+<p>
+<img alt="Precision and recall for 6 evals on a  forward first-order Markov model
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_fomm_extra.png">
+</p>
+
+<p>
+The general form of the extra-word eval matches that of the others.
+No big revelations here. That in itself is actually forming an interesting
+pattern. These different types of errors are all quite different, so the
+fact that they behave in a roughly similar way is notable. I don't know
+why that should be the case, but it bodes well for building one model
+that can detect them all.
+</p>
+
+<h2><a id="New-visualization:-Precision-recall-curve"></a><a href="#New-visualization:-Precision-recall-curve">New visualization: Precision-recall curve</a></h2>
+
+<p>
+Interpreting the precision and recall plots it tricky because it is
+the combination of precision-recall pairs that tell the full story.
+A high precision with a low recall means something very different
+than when it's paired with a high recall.
+</p>
+
+<p>
+A more intuitive way to communicate these coupled relationships is with
+a precision-recall curve. It is conceptually related to the classic
+<a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic">reciever-operator characteristic</a>
+curve. As with the ROC curve, the area under the PR curve is a convenient
+metric for the performance of the model. In both cases an area of one
+represents an ideal model, one that can achieve perfect recall and perfect
+precision at the same time. Currently the models we're working with
+range from 0.16 to 0.40 on these evals, so there is room for improvement.
+</p>
+
+<p>
+<figure>
+  <img title="The same plots as above, but in the form of precision-recall curves" alt="The same plots as above, but in the form of precision-recall curves
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_fomm_pr.png">
+  <figcaption>The same plots as above, but in the form of precision-recall curves</figcaption>
+</figure>
+</p>
+
+<h2><a id="Other-ways-to-combine-two-models"></a><a href="#Other-ways-to-combine-two-models">Other ways to combine two models</a></h2>
+
+<p>
+So far we’ve only looked at one way to combine multiple models' estimates,
+the minimum function. We had good reasons for this, but it’s worthwhile
+to explore some other options as well. There’s no reason at all to expect
+the <code>maximum()</code> function to do well. If every model has its own blind spots,
+then max adds those blind spots altogether, instead of covering them like
+min does. As expected, the performance is considerably worse.
+Area under the curve (AUC) varies between 0.08 and 0.18. But it’s still
+useful as a floor, showing how rough things can get if we go with something
+that we expect to be wrong.
+</p>
+
+<p>
+<img alt="PR curves for a forward/backward pair of models, joined via max
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_paired_max.png">
+</p>
+
+<p>
+A weakness of both the min and max functions is that they let any single
+model cast the deciding vote on whether a particular token is in error.
+This makes for a brittle system, only as accurate as the flakiest
+model involved. To build in some resilience it’s useful to combine the
+models in a way that every vote carries some weight. The most generic way
+to do this is with the <code>mean()</code> function&mdash;straight up add every model's
+estimate and divide by the number of models.
+</p>
+
+<p>
+This too gives kind of a wonky estimate, slightly better than max.
+AUC range is 0.08 to 0.24.
+</p>
+
+<p>
+<img alt="PR curves for a forward/backward pair of models, joined via mean
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_paired_mean.png">
+</p>
+
+<p>
+ It’s not much better than using the max. That may be because combining
+ small numbers is tricky to do in a meaningful way. Taking the average of
+ 1e-3 (10^-3) and 1e-7 produces something that is halfway in between them,
+ but on a logarithmic scale, it ends up being much closer to 1e-3.
+ A medium-sized likelihood averaged with a very small likelihood ends up
+ looking like a medium-sized likelihood.
+</p>
+
+<p>
+To properly account for this, we can use the <code>geometric mean</code>.
+As opposed to the vanilla mean, a.k.a. the arithmetic mean, the geometric
+mean multiplies all N elements together, and then takes the N-th root of them.
+In this case, the geometric mean of 1e-3 and 1e-7 would end up being
+1e-5, something that is closer to being in the middle of those two,
+at least for the our purposes. The geometric mean has a nice property that
+it gives every model a vote,
+but it gives extra weight to low likelihood estimates.
+It falls somewhere in between the minimum winner-take-all estimate
+and the mean.
+</p>
+
+<p>
+<img alt="PR curves for a forward/backward pair of models, joined via geometric mean
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_paired_geommean.png">
+</p>
+
+<p>
+Sadly, despite all of the good reasons we have for thinking this is
+a brilliant approach, it doesn’t perform much better than the max or the min.
+AUC range is a lukewarm 0.12 to 0.29, a good bit lower than the min function.
+In fact a tedious exploration of error thresholds, model alphabet sizes,
+and &beta; values fails to do much better.
+</p>
+
+<p>
+This is a bummer and a good reminder that no matter how good a theory sounds,
+there’s no guarantee that it will play out in reality the way you picture
+it going in your head.
+</p>
+
+<h2><a id="Classic-additive-smoothing,-an-&alpha;-parameter"></a><a href="#Classic-additive-smoothing,-an-&alpha;-parameter">Classic additive smoothing, an &alpha; parameter</a></h2>
+
+<p>
+I wasn't ready to give up on the geometric mean yet. The reasons
+for using it are still valid (less sensitivity to a single rogue model).
+And it's helpful to remember that the &beta; factor was designed specifically
+to help the minimum comparison be more meaningful. It way overestimates
+the likelihoods of tokens until a critical mass of observations have
+been collected. The success of &beta; for min suggests that maybe another
+correction might lead to a performance improvement for geometric mean.
+A reasonable thing to try is the original additive smoothing approach
+(without an upward bias) which is typically represented with an
+&alpha; parameter.
+</p>
+
+<p>
+The implementation is much the same as for &beta;. All together,
+the computation now looks like
+</p>
+
+<p>
+P(AB|A) = (count(AB) + &alpha; + &beta;) /<br>
+&nbsp; &nbsp; &nbsp; (count(A)+ &alpha; k + &beta;)
+</p>
+
+<p>
+where <em>k</em> is the alphabet size of the tokenizer involved.
+</p>
+
+<p>
+Sadly, try as I might, I couldn’t get any value of &alpha; to produce
+good results with a combined forward/backward model, even when playing
+with different alphabet sizes and error thresholds.
+Here’s an example of the results.
+The results are OK, but they are clearly inferior to using
+the minimum-take-all combination method.
+</p>
+
+<p>
+![PR curves for a forward/backward pair of models, joined via geometric mean
+with alpha=1000.
+](https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_alpha.png "PR curves for a forward/backward pair of models, joined via geometric mean
+with alpha=1000.")
+</p>
+
+<p>
+I had wanted this to work because it made so much sense to me. Letting all
+of the models participate in the vote feels egalitarian. More importantly,
+it is a typical approach in many machine learning methods.
+Geometric mean is a common way for ensemble models to vote.
+It usually takes the form of first taking the logarithm of the output of
+each model, then adding them together, but the end result is the same.
+But I can’t argue with the results. At least for the variants that I tried,
+it looks like the minimum combination rule is the winner. 
+</p>
+
+<p>
+Circling back to the min approach, because of the &beta;
+parameter, it's actually quite conservative, so it’s not as fragile as
+most winner-take-all operations tend to be. Also, in a proofreading
+application, it’s not terrible to have some false alarms. The cost of
+a false positive is modest. So if it catches all of the errors
+(near perfect recall) but half of the words that it flags are actually correct,
+(50% precision) then that still a decent win. It gives the human a much
+shorter list of things to check before they can confidently share
+their writing.
+</p>
+
+<h2><a id="Revisiting-the-<code>minimum()</code>-compositing-approach"></a><a href="#Revisiting-the-<code>minimum()</code>-compositing-approach">Revisiting the <code>minimum()</code> compositing approach</a></h2>
+
+<p>
+Now that classic additive smoothing is implemented, it's worth a peek to
+see whether it helps out in the min-combination case.
+</p>
+
+<p>
+<figure>
+  <img title="PR curves for a forward/backward pair of models, joined via min, with alpha=1000 and beta=1000." alt="PR curves for a forward/backward pair of models, joined via min,
+with alpha=100 and beta=1000.
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/alpha_beta_min.png">
+  <figcaption>PR curves for a forward/backward pair of models, joined via min, with alpha=1000 and beta=1000.</figcaption>
+</figure>
+</p>
+
+<p>
+The results are promising. AUC for some of the evals is slightly up and
+for others slightly down. The highest one is 0.42, the highest found so far.
+It's notable that this is without doing any kind of a search across
+hyperparameters to find the best-performing combination. It's interesting
+enough to keep &alpha; around for some additional exploration.
+</p>
+
+<h2><a id="Optimizing-models-one-at-a-time"></a><a href="#Optimizing-models-one-at-a-time">Optimizing models one at a time</a></h2>
+
+<p>
+The ensemble model we're using here has gotten complex. There are several
+hyperparameters that can be traded off against each other: error threshold,
+&alpha;,  &beta;, and tokenizer alphabet size. And we still haven't
+investigated the possibility of adding other models into the mix. And
+to further stir the pot, there is no reason that every model in the
+ensemble should share the same error threshold, &alpha;, and &beta;.
+The number of knobs to dial is multiplying and a strategy that rests on
+exhaustively trying every combination is not going to be feasible.
+</p>
+
+<p>
+A useful way to approach this is to break the large optimization problem
+down into smaller, more tractable problems, and one way to achieve this
+is by optimizing models individually before adding them together.
+One thing we're missing before we can do this is a single *optimization
+criterion*, a number that we can try to make as high (or low) as possible.
+Ideally it's a number that reflects everything we care about in one place.
+</p>
+
+<p>
+AUC is a reasonable step in this direction, because it combines precision
+and recall into a single value. Unfortunately, it doesn't go far enough
+because it is only defined across a range of values. It wouldn't
+help us choose a single error threshold. Also, I've conveniently 
+papered over the fact that AUC values can only be meaningfully compared when the
+parameter being varied is the same (and at the same levels) in every plot.
+That isn't a constraint I've been respecting.
+</p>
+
+<h2><a id="Optimizing-for-F<sub>&rho;</sub>"></a><a href="#Optimizing-for-F<sub>&rho;</sub>">Optimizing for F<sub>&rho;</sub></a></h2>
+
+<p>
+A better optimization criterion is the
+<a href="https://en.wikipedia.org/wiki/F-score">F-score</a>.
+It's most common manifestation is the F<sub>1</sub>:
+</p>
+
+<p>
+F<sub>1</sub> = 2 &times; precision &times; recall /<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  precision + recall
+</p>
+
+<p>
+The product over the sum of precision and recall gives a single metric
+that balances the concerns of them both. When they are both scaled
+from zero to one (rather than expressed as a percentage), multiplying
+by 2 ensures that F<sub>1</sub> will also fall between 0 and 1, with
+larger being better.
+</p>
+
+<p>
+Often in a particular application, recall is more important than precision
+or the other way around. There is another formulation of the F-score that
+allows us to put a finger on the scale.
+</p>
+
+<p>
+F<sub>&rho;</sub> = (1 + &rho;<sup>2</sup>) &times; precision &times; recall /<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  &rho;<sup>2</sup> &times; precision + recall
+</p>
+
+<p>
+The factor &rho; represents how much more important recall is than precision.
+For example, &rho = 2 indicates that recall is twice as important as precision,
+that is, that suffering two false positives is just as bad as a single false
+negative.
+</p>
+
+<p>
+(F<sub>&rho;</sub> is usually presented as F<sub>&beta;</sub>, but since we're
+already using &beta; for upward-biased additive smoothing that would have been
+confusing.)
+</p>
+
+<p>
+As mentioned earlier, when using the minimum combination rule for
+ensemble models, precision of the combined models will tend to be lower than
+individual models and recall will tend to be higher, but the exact behavior
+here will depend on how much overlap there is between the errors detected
+by the two models. &rho; = 1 is a good starting point, but &rho; will
+remain a hyperparameter that we can adjust to influence the final performance.
+</p>
+
+<p>
+Explore one parameter at a time
+</p>
+
+<p>
+Powell‘s method for optimization
+cycling through parameters
+</p>
+
+<p>
+EvoPowell - powell's method with some non-determinacy
+</p>
+
+<h2><a id="Visualizing-a-model's-behavior-at-the-token-level"></a><a href="#Visualizing-a-model's-behavior-at-the-token-level">Visualizing a model's behavior at the token level</a></h2>
+
+<p>
+https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
+</p>
+
+<p>
+https://en.wikipedia.org/wiki/ANSI_escape_code
+</p>
+
+<p>
+a new 2nd order before/after model?
+</p>
+
+<p>
+skip-gram model?
+</p>
+
+<p>
+bias in data - how to handle
+    racism
+    political views
+    hate speech
+    all words have a POV
+</p>
+
+<p>
+scale up data: wikipedia corpus
+</p>
+
+<p>
+exploring one hyperparameter dimension at a time (Powell's)
+</p>
+
+<p>
+limitations in training time
+</p>
+
+<p>
+profiling
+</p>
+
+<p>
+optimization
+</p>
+
+<p>
+exploring false positives and negatives
+</p>
+
+        <script src="javascripts/blog_signature.js"></script>
+      </section>
+    </div>
+    <script src="javascripts/blog_footer.js"></script>
+  </body>
+</html>
