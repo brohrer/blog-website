@@ -4,6 +4,69 @@
 <link>https://www.brandonrohrer.com</link>
 <description>Brandon Rohrer's blog</description>
 
+
+  <item>
+    <title>
+    Required keyword args in Python
+    </title>
+    <link>
+    https://peps.python.org/pep-3102/
+    </link>
+    <pubDate>
+    Tue, 29 Sep 2026 04:36:00 EDT
+    </pubDate>
+    <guid>
+    https://peps.python.org/pep-3102/
+    </guid>
+    <description><![CDATA[
+
+<p>
+Cool Python trick I learned: Sometimes you want functions to have
+keyword arguments, but you also want them to be required.
+This is especially useful when you're passing required arguments
+using dictionary expansion, like <code>function(**arg_dict)</code>.
+</p>
+<p>
+I always did this by setting all the parameter keyword defaults to
+<code>None</code>, then checking for any <code>None</code> values in
+the function. But there's a better way: using the bare <code>*</code>
+in the argument list. Everything after the asterisk will be a required
+keyword argument.
+</p>
+<p>
+This means that now when I write
+</p>
+
+<pre><code>def sum(*, a=None, b=None):
+	return a + b
+</code></pre>
+
+<p>
+I no longer have to check that <code>a</code> and <code>b</code> are not
+<code>None</code> in the function, and I can call it with
+</p>
+
+<pre><code>arg_dict = {'a': 4, 'b': 9}
+print(sum(**arg_dict))
+</code></pre>
+
+<p>
+You can still put positional and optional keywords before the asterisk.
+</p>
+
+<pre><code>
+def estimate(a, b, verbose=False, *, method=None, n_iter=None):
+    ...
+</code></pre>
+
+<p>
+It doesn't matter what default value these required kwargs get
+because it will always be overwritten.
+</p>
+
+    ]]></description>
+  </item>
+
   <item>
     <title>
     redsho: a robust hyperparameter optimizer
