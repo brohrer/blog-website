@@ -4,6 +4,54 @@
 <link>https://www.brandonrohrer.com</link>
 <description>Brandon Rohrer's blog</description>
 
+  <item>
+    <title>
+    redsho: a robust hyperparameter optimizer
+    </title>
+    <link>
+    https://codeberg.org/brohrer/redsho
+    </link>
+    <pubDate>
+    Mon, 28 Sep 2026 06:36:00 EDT
+    </pubDate>
+    <guid>
+    https://codeberg.org/brohrer/redsho
+    </guid>
+    <description><![CDATA[
+
+<p>
+Optimizing models with lots of hyperparameters or functions with many options
+is a slog that usually requires a combination community wisdom, obscure
+blog posts, and tedious trial and error. Automated methods tend to either
+rely on strong assumptions of smoothness or brute force their way through
+every permutation. All of these options kind of suck.
+</p>
+
+<p style="text-align:center;">
+<img alt="Animation of Evolutionary Powell's method finding an optimum"  
+src="https://gitlab.com/brohrer/ponderosa/raw/master/ponderosa/landing_page_demo.gif"
+style="height: 350px;">
+</p>
+<p>
+I took a swing at an alternative approach called <code>redsho</code>.
+It takes a middle ground approach for when the effects of parameters and
+options can be wildly non-linear and exhaustive grid search would take
+longer than we want to spend. A full description of how it works takes
+<a href="https://brandonrohrer.at/evopowell.html">a post of its own</a>,
+but its distinguishing feature is that it is evolutionary in nature.
+It looks through the parameter combinations it has tried already and
+picks one randomly, leaning heavily toward the best performers.
+Then it chooses one of the parameters in its collection and tries a few
+random values that it hasn't tried before. This process is reflected in
+the full name: Robust Evolutionary Direction Set Hyperparameter Optimizer.
+</p>
+<p>
+Check out <a href="https://codeberg.org/brohrer/redsho">the repo</a>).
+</p>
+    ]]></description>
+  </item>
+
+
 
   <item>
     <title>
