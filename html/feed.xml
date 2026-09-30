@@ -7,6 +7,105 @@
 
   <item>
     <title>
+    Working examples for redsho hyperparameter optimization
+    </title>
+    <link>
+    https://codeberg.org/brohrer/redsho-examples/src/branch/main
+    </link>
+    <pubDate>
+    Wed, 30 Sep 2026 04:36:00 EDT
+    </pubDate>
+    <guid>
+    https://codeberg.org/brohrer/redsho-examples/src/branch/main
+    </guid>
+    <description><![CDATA[
+<p>
+I recently published the
+<a href="https://codeberg.org/brohrer/redsho">redsho</a>
+package for hyperparameter optimization.
+More than anything, I want it to be useful.
+I find it helpful to start with a working example. To this end I
+created a second repo called
+<a href="https://codeberg.org/brohrer/redsho-examples/src/branch/main">redsho-examples</a>
+that walks through how to do it.
+</p>
+
+<h3>Usage</h3>
+
+<p>
+Start with an evaluation function that takes
+some hyperparameters as keyword arguments.
+</p>
+
+<pre><code>
+def evaluate(*, a, b, c):
+    return a * b**3 % c
+</code></pre>
+
+<p>
+(The leading <code>*</code> tells Python that everything that follows
+is a required keyword argument.)
+</p>
+
+<p>
+Build a collection of values to try for each parameter.
+</p>
+
+<pre><code>
+values = {
+    "a": [4, 7, 9],
+    "b": [2, 5, 6],
+    "c": [5, 8, 11],
+}
+</code></pre>
+
+<p>
+Call the optimizer.
+</p>
+
+<pre><code>
+from redsho.optimizer import optimize<br>
+error, params = optimize(evaluate, values)
+</code></pre>
+
+<p>
+where <code>error</code> is the lowest error achieved, and <code>params</code>
+is the collection of parameter values that achieved it.
+</p>
+
+<h3>Examples</h3>
+<p>
+As of right now, there are 4 examples, each in their own subdirectory:
+    <ul>
+      <li>
+        <code>sinc</code>: optimizes a 2D variant of the sinc function,
+        <em>sin(x)/x</em>
+      </li>
+      <li>
+        <code>perf</code>: tests the execution time bottleneck in redsho
+        and helps to streamline it
+      </li>
+      <li>
+        <code>xgboost_regression</code>: optimizes an XGBoost regression
+        model across a wide variety of hyperparameters and options
+      </li>
+      <li>
+        <code>xgboost_multiclass</code>: same as the previous example,
+        but with a multiclass classification problem
+      </li>
+    </ul>
+</p>
+
+<p>
+  If you generate any examples of your own that you're comfortable sharing,
+  we can add them to the list. :)
+</p>
+
+    ]]></description>
+  </item>
+
+  <item>
+    <title>
     Required keyword args in Python
     </title>
     <link>
@@ -111,545 +210,6 @@ the full name: Robust Evolutionary Direction Set Hyperparameter Optimizer.
 <p>
 Check out <a href="https://codeberg.org/brohrer/redsho">the repo</a>).
 </p>
-    ]]></description>
-  </item>
-
-
-
-  <item>
-    <title>
-    Artisanal Language Model v68: Models get interesting
-    </title>
-    <link>
-    https://brandonrohrer.org/alms_composite.html
-    </link>
-    <pubDate>
-    Mon, 10 Aug 2026 04:36:00 EDT
-    </pubDate>
-    <guid>
-    https://brandonrohrer.org/alms_composite.html
-    </guid>
-    <description><![CDATA[
-
-
-<p>
-We're coming into this installment with some good momentum, but despite that
-(because of that?) it's a good time to pause for some house cleaning.
-The sparse first-order models and second-order models with size limits
-work so much faster and smaller than everything that came before, that
-the earlier work can be safely set aside. Those failed experiments are
-relegated to the git history and cleaned out of the code, as are all
-references to them.
-</p>
-
-<h2><a id="Downsizing"></a><a href="#Downsizing">Downsizing</a></h2>
-
-<p>
-This is a little painful. I was proud of getting the database models
-working. I thought I might be able to make a longer run with NumPy-backed
-models. But that's not what happened, and hanging on to all that code will
-just slow things down. Every extraneous line of code is a liability&mdash;something
-that might obscure the bug you're looking for or require updating or
-take extra time to test. The code is still in there if we ever need to
-retrieve it, but until then it will just be in the way.
-The artisanal approach is to generate
-and deprecate code with abandon. Kill your darlings.
-</p>
-
-<p>
-Not only does this shrink the repository, but it also frees me up to make
-space on my hard drive. Some of the deprecated models, once trained, were
-enormous. 12 GB for the dense first-order models. I filled up my hard drive
-at several points during the last couple of posts and had to clean out
-discarded models. With the deprecation it allowed me to wipe all those
-from my disk and once again get some breathing room.
-</p>
-
-<p>
-RAM has also been an ongoing issue. When training several models in
-succession, as part of running tests or evals, memory gets full to
-overflowing very quickly. I figured out that I have to take care and
-free up the memory used by each model when I'm done with it. This took
-some research and trial and error but I figured out that I could
-run <code>clear()</code> on each n-gram dictionary in the models to reclaim all
-their memory. Each model now has a <code>delete()</code> method that implements
-this. Now I can run models in succession with no issue.
-</p>
-
-<p>
-Living small is part of the artisanal process. The constaints are not
-a barrier to the final product. They are an important shaping force that
-help it become what it needs to be. You can't come in at the end of a
-project and magically shrink it. Often the decisions made along the way
-are in direct opposition to that. You can only build small if you
-keep it small, working with what you've got as you go.
-</p>
-
-<h2><a id="Refactoring"></a><a href="#Refactoring">Refactoring</a></h2>
-
-<p>
-A rule of thumb that I have for myself is that the right time to
-refactor is right when you see it. Whether it's renaming a variable,
-pulling a reuasable snippet into a function, or pulling out a parent class
-from sibling classes, making the code clearer is always most helpful right now.
-This sparks of insight on how to clarify start to fade after a while,
-and you get used to the mental gymnastics of working with it as is,
-so I try to strike while the iron is hot.
-</p>
-
-<p>
-In that spirit, the proofreader has evolved beyond science fiction.
-The larger Project Gutenberg training data sets now extend far beyond scifi,
-and it's likely that the training data set will grow futher still.
-It's still limited to the English language, so <code>proofread-eng</code> is
-now a better name for it than <code>proofread-eng-scifi</code>.
-</p>
-
-<p>
-It's still a small-ish project and I like to stay as close to the code as
-I can get away with, so I don't use a full featured Integrated
-Development Environment (IDE) like VSCode or PyCharm. Instead I try
-to get by with the vim text editor and command line operations.
-</p>
-
-<p>
-Making a wide ranging change like a package and repository name first
-requires figuring out everywhere the name exists. This command is helpful
-for that.
-</p>
-
-<p>
-<pre>
-grep -r --include \*.py "proofread_eng_scifi" .
-</pre>
-</p>
-
-<ul>
-<li> <code>grep</code> finds things</li>
-<li> <code>-r</code> drills down into directories recursively</li>
-<li> <code>--include \*.py</code> only checks files whose names end in <code>.py</code></li>
-<li> <code>"proofread_eng_scifi"</code> is the string to look for</li>
-<li> <code>.</code> signals to start looking in the current directory</li>
-</ul>
-
-<p>
-It turns out that it occurs exclusively in import statements.
-Replacing it happens with this command.
-</p>
-
-<p>
-<pre>
-sed -i '' -e 's/proofread_eng_scifi/proofread_eng/g' *.py
-</pre>
-</p>
-
-<ul>
-<li> <code>sed</code> (stream editor) is a command to modify text</li>
-<li> <code>-i ''</code> says not to create backups of the files before modification
-    (living dangerously)</li>
-<li> <code>-e</code> instructs it to execute the command that follows</li>
-<li> <code>'s/proofread_eng_scifi/proofread_eng/g'</code> says to swap (<code>s</code>) the
-    string <code>proofread_eng_scifi</code> for the string <code>proofread_eng</code>
-    everywhere in the file, even if it occurs multiple times on the same
-    line (<code>g</code>)</li>
-<li> <code>*.py</code> says to do this for all Python files in the directory.</li>
-</ul>
-
-<p>
-I ran this separately in each directory containing files that needed
-renaming. There is certainly a way to automate this so that it changes
-all the <code>.py</code> files at once without descending into the <code>.venv</code>
-directories and possibly modifying those, but 2 minutes of twiddling
-wasn't enough to figure it out.
-</p>
-
-<p>
-I changed the names of the repositories as well. Thankfully all three of
-the git hosting services I use (Codeberg, GitHub, GitLab) maintain the
-links to the old repository name and redirect them. I won't need to
-update any of the links in old posts. They'll all end up where
-they need to go.
-</p>
-
-<h2><a id="New-eval:-Missing-words"></a><a href="#New-eval:-Missing-words">New eval: Missing words</a></h2>
-
-<p>
-I've been in the habit of procrastinating eval work until the end of each
-post, but then it just sits there unused until I get to the next one.
-This time I'm more disciplined. I'm kicking off a new eval right away.
-A common prose failure mode is a missing word, but it's not one that's
-well represented in the evals yet. It feels worthy of its own category,
-especially since it is a particular type of error and may prove harder
-for some models to detect than others.
-</p>
-
-<p>
-The performance on the missing words eval is similar in every important
-way to the other evals. Not interesting enough to throw up a plot
-at this point.
-</p>
-
-<h2><a id="A-first-order-Markov-model,-but-running-backward"></a><a href="#A-first-order-Markov-model,-but-running-backward">A first-order Markov model, but running backward</a></h2>
-
-<p>
-A cool thing about the proofreading problem is that we already have
-the complete text. There's not an implied relationship between token
-order and time. We can look forward just as easily as we can look back.
-It would be a shame to have the ability to see into the future and not
-use it.
-</p>
-
-<p>
-It is a straightforward thing to flip the direction of a first-order
-model to make it run backward.
-</p>
-
-<p>
-The forward version finds the conditional probability of a token pair,
-given the occurence of the first token.
-</p>
-
-<p>
-P(AB|A) = count(AB) / count(A)
-</p>
-
-<p>
-The backward version tweaks that by making it conditional on the occurrence
-of the second token.
-</p>
-
-<p>
-P(AB|B) = count(AB) / count(B)
-</p>
-
-<p>
-The necessary changes in the code are minimal. The difference between
-forward and backward first-order models is only a shift-by-one difference
-in the index of the token sequence, to pull out the second token in the
-pair instead of the first.
-</p>
-
-<p>
-<img alt="Eval performance changes as tokenizer vocabulary increases.
-" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/perf_vocab_size_reverse_fomm.png">
-</p>
-
-<p>
-The behavior is similar too, but not identical. Looking at the forward
-and backward precision-recall lines side by side shows that some are
-clearly higher than others. On some evals the forward model performs
-better, but on other evals it's the other way around. This suggests
-that the two models are picking up on different patterns, which makes sense,
-given their different approaches. And as every comic book reader knows,
-when there are two heroes with different strengths you absolutely have to
-have ... &ast;drumroll&ast; ... A Teamup!
-</p>
-
-<h2><a id="Combining-forward-and-backward-models"></a><a href="#Combining-forward-and-backward-models">Combining forward and backward models</a></h2>
-
-<p>
-There are a lot of ways to combine the estimates of two models
-assessing the likelihood of a particular token appearing. Each will
-have its own likelihood estimate. The combined likelihood could be
-the maximum of the two, the minimum of the two, the average of the two,
-or any number of other schemes.
-Rather than brute force trying them all, it's helpful to develop some
-reasoning behind the choice.
-</p>
-
-<p>
-The idea behind combining models is that each of them have different
-blind spots. If there is a sequence of tokens A, B, C, and we want
-to find the likelihood of B, then a forward first-order model will use
-the sequence AB to do that and a backward first-order model will use the
-sequence BC. It could be that B frequently follows A, so the likelihood of
-B given A is high. But it could also be that B rarely precedes C, so
-the likelihood of B given C is low. In this situation it makes sense to
-given every model veto power. Since the question the models are tasked
-with answering is "Is this token weird?", any single model detecting
-weirdness can answer that question with a yes. In this case, weirdness
-is a likelihood below the threshold set by the proofreader.
-</p>
-
-<p>
-The math that goes along with this is the minimum operator. The likelihood
-of a particular token in a multi-model ensemble is the minimum of the
-likelihoods assigned by all the models in the ensemble.
-</p>
-
-<h2><a id="Making-models-cautious"></a><a href="#Making-models-cautious">Making models cautious</a></h2>
-
-<p>
-The downside of the frequentist method being used here is that it gets
-really wonky when there aren't many observations. If token A has been
-seen once but AB has not been seen, then P(AB | A) is 0/1 or 0. Assigning
-something a probability of zero is generally a bad idea. That suggests
-that it is impossible and that the universe will decay to heat death
-before it that event happens. This should be avoided in most sensible
-applications, a rule of thumb named
-<a href="https://en.wikipedia.org/wiki/Cromwell's_rule">Cromwell's Rule</a>
-after Oliver Cromwell who authored the 17th century banger
-"I beseech you, in the bowels of Christ, think it possible
-that you may be mistaken." Today we rephrase that as
-"Never say never".
-</p>
-
-<p>
-A common way to steer clear of zero probability estimates is
-<a href="https://en.wikipedia.org/wiki/Additive_smoothing">additive smoothing</a>,
-where a number called a pseudocount is added to the numerator and
-denominator. To implement this in a classic way, known as
-Laplace Smoothing, we would add 1 to AB and the dictionary size
-(e.g. 20,000) to A, so that even before any observations are made, the
-likelihood estimate of B given A is 1/20,000. It's small, but not zero.
-And, summed up over every possible two-token sequence starting with A,
-it adds to 1. If A always precedes B and the sequence AB is observed
-20,000 times then the likelihood of B given A will be 20,000/40,000 or 1/2.
-No matter how many times the sequence AB is observed,
-the likelihood of AB will never reach one.
-</p>
-
-<p>
-Additive smoothing is a step in the right direction, but here we want
-to go a step further than making the model approximately correct.
-We want it to err on the conservative side, to hold off from making
-a low-likelihood determination about a token until it has some experience
-under its belt and can make that declaration confidently.
-We want the estimate to be high, and then get lower with more observations,
-only crossing the threshold once the determination of weirdness can be made
-with confidence.
-</p>
-
-<h2><a id="Upward-biased-additive-smoothing"></a><a href="#Upward-biased-additive-smoothing">Upward biased additive smoothing</a></h2>
-
-<p>
-To get this effect, it's possible to add a pseudo-pseudocount to
-the likelihood estimate, adding the same constant to both the unigram
-and the bigram counts, to both the numerator and denominator.
-Traditionally, the constant used in additive smoothing is a Greek letter alpha.
-For this variation of additive smoothing, I'll use the Greek letter beta,
-&beta;, for the constant.
-</p>
-
-<p>
-The effect of this modification is to drive the likelihood estimate upward
-toward 1. In fact, before any observations are made, all likelihood
-estimates are (0 + 1)/(0 + 1) = 1/1 = 1. This is clearly nonsensical,
-estimating that every possible outcome is absolutely certain (think
-Everything Everywhere All at Once), but most importantly for error detection,
-it doesn't estimate anything to be at or near zero.
-</p>
-
-<p>
-Imagine that the first time token A is encountered it is followed by
-B. The count of A is 1, the count of B is 1, and the likelihood of
-B given A is (1 + 1)/(1 + 1) = 2/2 = 1. Still high. Still OK for our purposes.
-At that point, the likelihood of C given A is (0 + 1)/(1 + 1) = 1/2.
-It's still not zero or even very small, which is exactly what we want.
-After all, A has only been seen once. How could the estimator possibly
-be confident about what should or shouldn't come next?
-</p>
-
-<p>
-In order to get P(AB|A) down to 0.1, A would have to occur 9 times and
-never be followed by B. To get to 0.01, 99 times. For 0.001, 999 times.
-To get down to 1/n, A would have to been n-1 times without B
-following it. Adding in the &beta;s forces the estimator to
-gather more experience before it can reach any low-likelihood estimates.
-</p>
-
-<p>
-For &beta; = 2, the number of times A has to be seen to reach a low
-estimate doubles. For 0.1, 18 times, etc. In general, for arbitrary
-&beta; &gt; 0, a likelihood of 1/n corresponds to &beta; (n - 1)
-observations that do not include that outcome.
-</p>
-
-<h2><a id="So-how-well-does-this-grand-idea-work?"></a><a href="#So-how-well-does-this-grand-idea-work?">So how well does this grand idea work?</a></h2>
-
-<p>
-It works kind of OK. After some hunting around through dictionary sizes,
-error thresholds, and values for &beta;, I found a combination that was good
-enough to be interesting.
-</p>
-
-<p>
-<figure>
-  <img title="Eval performance has a narrow peak roughly around alphabet size = 500, error threshold = 1e-4, and &beta; = 1000." alt="Eval performance has a narrow peak roughly around alphabet size = 500,
-error threshold = 1e-4, and &beta; = 1000.
-" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/beta_smoothing_fomm.png">
-  <figcaption>Eval performance has a narrow peak roughly around alphabet size = 500, error threshold = 1e-4, and &beta; = 1000.</figcaption>
-</figure>
-</p>
-
-<p>
-The reason I say it was OK, and not "good" is that precision is still low
-in some cases. The plan was to get several models with high precision
-and low recall, and combine their estimates with the <code>minimum()</code> function
-to get a composite model with medium-to-high precision and medium-to-high
-recall. Using a minimum rule for combining models will only ever drag
-precision down and lift recall up. For it to work we would need to start
-with high precision across the board. That's disappointing. It will
-require a change in the appoach.
-</p>
-
-<p>
-Another thing to note about these plots is that they show performance
-curves with sharper peaks than we've seen before. This means that smaller
-changes in the parameters result in larger changes of tool performance,
-that performance is sensitive to hyperparameter values. The implication
-of this, combined with the fact that I just added a new hyperparameter to
-the mix, is that searching for optimally performing parameter combinations
-will require more trial and error. Possibly some automated hyperparameter
-optimization if it gets too tedious to do it my hand.
-</p>
-
-<p>
-Looking at the backward first-order models the patterns are similar, but
-the performance seems to be a little better.
-</p>
-
-<p>
-<figure>
-  <img title="Eval performance for a backward model also has a peak roughly around error threshold = 1e-4 for alphabet size = 500 and &beta; = 1000." alt="Eval performance for a backward model also has a peak roughly around
-error threshold = 1e-4 for alphabet size = 500 and &beta; = 1000.
-" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/beta_smoothing_backward_fomm.png">
-  <figcaption>Eval performance for a backward model also has a peak roughly around error threshold = 1e-4 for alphabet size = 500 and &beta; = 1000.</figcaption>
-</figure>
-</p>
-
-<p>
-These plots are not quite the same, because I added twice as many
-error threshold points. They smear the performance peaks out a bit and give
-them more body. It's tough to tell whether the performance is really better
-or if the increased sampling density just gives a better picture of it.
-</p>
-
-<p>
-Combining the forward and backward models and adding yet more error
-threshold evaluation points shows similar performance patterns.
-They are neither dramatically better nor worse than the individual models.
-These have been combined with the "minimum" method discussed earlier.
-It doesn't appear to have the powerful performance boost I hoped it would
-have, when coupled with biased additive smoothing.
-</p>
-
-<p>
-<img alt="Eval performance for a combined forward and backward model has shows a similar pattern.
-" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/beta_smoothing_multimodel.png">
-</p>
-
-<p>
-The forward/backward pair does show some promising performance on the evals
-where it the precision and recall curves cross over at around the 40% level,
-typically around 0.0002. But for grammar and missing words, for instance,
-that crossover still occurs at around the 25% level. The doesn't leave me
-with as much hope that we'll be able to add other models to the mix to get
-get recall, because that will only pull precision down more as long as
-I am using the <code>minimum()</code> function to combine them.
-</p>
-
-<h2><a id="Next-steps"></a><a href="#Next-steps">Next steps</a></h2>
-
-<p>
-This approach hasn't hit a wall, but it has hit a speedbump. The next order
-or business will be to search out another way to combine estimates from
-multiple models. We may have hit the limits of <code>minimum()</code>.
-</p>
-
-<p>
-We'll see how that goes before deciding what to do next. This work has hit
-the exciting phase were it is exploring new ground, and we can only
-see a step or two ahead at most.
-</p>
-
-    ]]></description>
-  </item>
-
-
-  <item>
-    <title>
-    Useful bash/zsh tricks
-    </title>
-    <link>
-    https://brandonrohrer.org/shell_tricks.html
-    </link>
-    <pubDate>
-    Mon, 03 Aug 2026 06:36:00 EDT
-    </pubDate>
-    <guid>
-    https://brandonrohrer.org/shell_tricks.html
-    </guid>
-    <description><![CDATA[
-
-<p>
-There are several command line incantations that I have had to look up
-at least a dozen times. I'm compiling a handy cheat sheet of them here.
-</p>
-
-<p>
-These commands all work on my Mac, in the Terminal app running the shell zsh.
-I think most of them are directly portable to bash, but some will have
-small differences.
-</p>
-
-<p>
-To drill deeper on any of these run <code>man <command></code>. I find the examples
-section at the end most helpful.
-</p>
-
-<h2><a id="Finding-a-string-in-Python-files"></a><a href="#Finding-a-string-in-Python-files">Finding a string in Python files</a></h2>
-
-<p>
-<pre>
-grep -r --include \*.py 'string I am looking for' .
-</pre>
-</p>
-
-<ul>
-<li> <code>grep</code> finds strings</li>
-<li> <code>-r</code> drills down into directories recursively</li>
-<li> <code>--include \*.py</code> only checks files whose names end in <code>.py</code></li>
-<li> <code>'string I am looking for</code> is the string to look for</li>
-<li> <code>.</code> signals to start looking in the current directory</li>
-</ul>
-
-<h2><a id="Find-files-by-name"></a><a href="#Find-files-by-name">Find files by name</a></h2>
-
-<p>
-<pre>
-find . -name '&ast;partial_name&ast;'
-</pre>
-</p>
-
-<ul>
-<li> <code>find</code> finds files and directories recursively</li>
-<li> <code>.</code> says to start in the current directory and work down</li>
-<li> <code>-name '&ast;partial_name&ast;'</code> is an instruction to find anything that has
-  the string "partial_name" anywhere in its name.</li>
-</ul>
-
-<h2><a id="Find-and-replace-all-occurrences-of-a-string-in-a-directory's-Python-files"></a><a href="#Find-and-replace-all-occurrences-of-a-string-in-a-directory's-Python-files">Find and replace all occurrences of a string in a directory's Python files</a></h2>
-
-<p>
-<pre>
-sed -i '.bak' -e 's/old string/new string/g' *.py
-</pre>
-</p>
-
-<ul>
-<li> <code>sed</code> (stream editor) is a command to modify text</li>
-<li> <code>-i '.bak'</code> creates a backup copy of every modified file, using the extension
-   <code>.bak</code>. If you want to live dangerously you can skip backups by specitying
-   <code>-i ''</code>.</li>
-<li> <code>-e</code> instructs it to execute the command that follows</li>
-<li> <code>'s/old string/new string/g'</code> says to swap (<code>s</code>) the
-    string <code>old string</code> for the string <code>new string</code>
-    everywhere in the file, even if it occurs multiple times on the same
-    line (<code>g</code>)</li>
-<li> <code>*.py</code> says to do this for all Python files in the directory.</li>
-</ul>
-
     ]]></description>
   </item>
 
