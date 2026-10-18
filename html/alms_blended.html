@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 
-  <script type="text/javascript">var blog_title = "Version 183: Getting models to cooperate";</script>
-  <script type="text/javascript">var publication_date = "August 18, 2026";</script>
+  <script type="text/javascript">var blog_title = "Version 183: Getting models to work together";</script>
+  <script type="text/javascript">var publication_date = "October 18, 2026";</script>
   <head>
     <link rel="icon" href="images/ml_logo.png">
     <meta charset='utf-8'>
@@ -35,7 +35,7 @@ a self-correction during dictation,
 they come up a lot. It will help broaden the set of proofreading errors
 I expect my proofreader to catch. Also, there weren't enough eval
 categories to fill up two rows of three plots in the results, and that
-was bugging me. Now we'll two full rows. (Until next chapter.)
+was bugging me. Now we'll have two full rows.
 </p>
 
 <p>
@@ -46,7 +46,7 @@ was bugging me. Now we'll two full rows. (Until next chapter.)
 <p>
 The general form of the extra-word eval matches that of the others.
 No big revelations here. That in itself is actually forming an interesting
-pattern. These different types of errors are all quite different, so the
+pattern. These various categories of errors are all quite different, so the
 fact that they behave in a roughly similar way is notable. I don't know
 why that should be the case, but it bodes well for building one model
 that can detect them all.
@@ -168,8 +168,10 @@ for using it are still valid (less sensitivity to a single rogue model).
 And it's helpful to remember that the &beta; factor was designed specifically
 to help the minimum comparison be more meaningful. It way overestimates
 the likelihoods of tokens until a critical mass of observations have
-been collected. The success of &beta; for min suggests that maybe another
-correction might lead to a performance improvement for geometric mean.
+been collected. The success of &beta; for <code>min</code>-based combination
+suggests that maybe another
+correction might lead to a performance improvement for
+geometric mean-based model combination.
 A reasonable thing to try is the original additive smoothing approach
 (without an upward bias) which is typically represented with an
 &alpha; parameter.
@@ -199,10 +201,12 @@ the minimum-take-all combination method.
 </p>
 
 <p>
-![PR curves for a forward/backward pair of models, joined via geometric mean
+<figure>
+  <img title="PR curves for a forward/backward pair of models, joined via geometric mean with alpha=1000." alt="PR curves for a forward/backward pair of models, joined via geometric mean
 with alpha=1000.
-](https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_alpha.png "PR curves for a forward/backward pair of models, joined via geometric mean
-with alpha=1000.")
+" src="https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_alpha.png">
+  <figcaption>PR curves for a forward/backward pair of models, joined via geometric mean with alpha=1000.</figcaption>
+</figure>
 </p>
 
 <p>
@@ -269,8 +273,9 @@ exhaustively trying every combination is not going to be feasible.
 A useful way to approach this is to break the large optimization problem
 down into smaller, more tractable problems, and one way to achieve this
 is by optimizing models individually before adding them together.
-One thing we're missing before we can do this is a single *optimization
-criterion*, a number that we can try to make as high (or low) as possible.
+One thing we're missing before we can do this is a single
+<strong>optimization criterion</strong>, a number that we can try
+to make as high (or low) as possible.
 Ideally it's a number that reflects everything we care about in one place.
 </p>
 
@@ -318,7 +323,7 @@ F<sub>&rho;</sub> = (1 + &rho;<sup>2</sup>) &times; precision &times; recall /<b
 
 <p>
 The factor &rho; represents how much more important recall is than precision.
-For example, &rho = 2 indicates that recall is twice as important as precision,
+For example, &rho; = 2 indicates that recall is twice as important as precision,
 that is, that suffering two false positives is just as bad as a single false
 negative.
 </p>
@@ -334,71 +339,172 @@ As mentioned earlier, when using the minimum combination rule for
 ensemble models, precision of the combined models will tend to be lower than
 individual models and recall will tend to be higher, but the exact behavior
 here will depend on how much overlap there is between the errors detected
-by the two models. &rho; = 1 is a good starting point, but &rho; will
+by the two models. &rho; = 1/2 is a good starting point, since a model's
+precision is more important to us than its recall, but &rho; will
 remain a hyperparameter that we can adjust to influence the final performance.
 </p>
 
+<h2><a id="Direction-set-methods:-Optimizing-one-parameter-at-a-time"></a><a href="#Direction-set-methods:-Optimizing-one-parameter-at-a-time">Direction set methods: Optimizing one parameter at a time</a></h2>
+
 <p>
-Explore one parameter at a time
+The plots so far have shown precision and recall for varying values of a
+single parameter. This can be imagined as exploring a complicated
+world in one direction at a time. Viewing it this way gives a maddeningly
+narrow slice of what the countryside looks like. But now that we are up to
+four hyperparameters per individual Markov model (&alpha;, &beta;,
+error threshold, and tokenizer alphabet size), we have scant hope of
+being able to visualize the complete landscape by any method.
 </p>
 
 <p>
-Powell‘s method for optimization
-cycling through parameters
+Luckily, now that there is an optimization criterion defined we don't have
+to visualize the whole landscape. We're only interested in finding the
+highest point. This can be done by cycling through the directions
+available and traveling them one at a time, finding the highest point
+along one direction before moving on to the next. When we can cycle
+through all the directions without finding a higher point, we'll know
+we've arrived. This guarantees that
+we'll get to the top of the nearest hill, and we just have to hope
+that the hill we're on the knee of is the higihest one in the land.
 </p>
 
 <p>
-EvoPowell - powell's method with some non-determinacy
-</p>
-
-<h2><a id="Visualizing-a-model's-behavior-at-the-token-level"></a><a href="#Visualizing-a-model's-behavior-at-the-token-level">Visualizing a model's behavior at the token level</a></h2>
-
-<p>
-https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
+Working with a set of directions (a <em>direction set method</em>) is a good way
+to navigate when it's not practical to calculate the gradient&mdash;when we
+can't read the slope of the ground and head uphill.
 </p>
 
 <p>
-https://en.wikipedia.org/wiki/ANSI_escape_code
+As a side note, this approach is the basis for
+<a href="https://en.wikipedia.org/wiki/Powell's_method">Powell's method</a>, although
+Powell's method makes the additional refinement of using prior search
+experience to choose a better exploration direction. Like most
+algorithmic refinements
+it makes the method more efficient for <em>most</em> problems, but it's
+possible to craft others that break it badly.
+</p>
+
+<h2><a id="A-tool-for-this-job:-Redsho"></a><a href="#A-tool-for-this-job:-Redsho">A tool for this job: Redsho</a></h2>
+
+<p>
+In 2019 I needed an optimizer that, like Powell's method, was gradient-free.
+I also wanted to make it tougher. Powell's method assumes that you're
+already somewhere on the hill you're trying to climb; it finds the
+local optimum. Most implementations also assume that the landscape
+it's traversing is smooth. If you've ever been outdoors, you know that
+these assumptions are frequently broken in the practice.
 </p>
 
 <p>
-a new 2nd order before/after model?
+I built a direction set method that overcame these weaknesses, but
+at a cost. (There is always a cost! No lunch is free.) It requires a
+set of values to check in each direction, rather than exploring continuously.
+Another way of saying this is that it is a discrete optimizer, rather than
+a continuous optimizer. And
+it uses some random jumping to avoid getting stuck in ruts, but
+its jumps are heavily influenced by the best options it has discovered
+so far, similar to evolutionary algorithms.
 </p>
 
 <p>
-skip-gram model?
+This so-called
+<a href="https://brandonrohrer.org/evopowell.html">Evolutionary Powell's method</a>
+sat quietly collecting dust in a repository for a few years.
+Now its moment of usefulness has come! Of course with the benefit of
+seven more years of software engineering experience, I cringed at the
+devil-may-care quality of the project and felt compelled to give it a glow up
+before using it to tune Markov models. I'm glad I did. In the process of
+refactoring and adding type hints and tests I discovered several
+disturbing bugs and failure modes. It was broken in subtle ways, but now
+it's on more solid engineering foundations, and I feel more confident
+releasing it into the Python community.
 </p>
 
 <p>
-bias in data - how to handle
-    racism
-    political views
-    hate speech
-    all words have a POV
+This robust evolutionary direction set hyperparameter optimizer (Redsho)
+is now available on PyPI and in public repository services, including
+<a href="https://codeberg.org/brohrer/redsho">Codeberg</a> and
+<a href="https://github.com/brohrer/redsho">GitHub</a>. It can be installed in any
+project with <code>uv add redsho</code> or <code>pip install redsho</code>.
+Detailed implementation instructions are in the repos' READMEs.
+</p>
+
+<h2><a id="Tunable-Markov-Models"></a><a href="#Tunable-Markov-Models">Tunable Markov Models</a></h2>
+
+<p>
+Armed with an optimizer, it was time to modify the first order Markov
+model to include a tuning step. After the model is trained by counting
+unigrams and bigrams in a collection of documents, it undergoes a
+second step where it uses redsho to explore values of 
+&alpha;, &beta;, and error threshold.
+This tuning step uses performance on the evaluation data set to calcaulate
+precision, recall, and F-scores.
+To be more precise, I assumed an error threshold of 1 and introduced a
+scaling factor. This sets it up so that multiple models all come out
+of the process scaled so that their best performance occurs with an
+error cutoff of 1.
 </p>
 
 <p>
-scale up data: wikipedia corpus
+An initial pass at tuning gives
+&alpha; = 2.15e-05, &beta = 0, and error threshold = 3.59e-05 for 
+a forward model and
+&alpha; = 2.15, &beta; = 10, and error threshold = 5.99e-05 for
+a backward model. Woohoo!
+</p>
+
+<h2><a id="Next-steps"></a><a href="#Next-steps">Next steps</a></h2>
+
+<p>
+We're right in the middle of this line of inquiry, but this post is
+already long, so I'm going to break it here and pick it up in the
+next post. 
+</p>
+
+<h3><a id="Building-proofreaders"></a><a href="#Building-proofreaders">Building proofreaders</a></h3>
+
+<p>
+Now that there are tunable models, the next logical step is to put them
+into proofreaders and see how they perform. With any luck they will
+have higher recall and precision. I hope.
+</p>
+
+<h3><a id="Adding-more-models"></a><a href="#Adding-more-models">Adding more models</a></h3>
+
+<p>
+More importantly, with pre-tuned Markov models it becomes practical
+to combine more of them confidently. This opens the door to adding
+first-order models that skip words and second-order models into
+the basic forward-plus-backward model combination. This brings
+more information to bear on the proofreading decision and opens
+up the possibility of more sophisticated decisions. Hopefully this will
+start to make a dent in the grammar evals, which require the most
+context and where performance has been lagging the other evals.
+</p>
+
+<h3><a id="Separate-tuning-and-eval-data"></a><a href="#Separate-tuning-and-eval-data">Separate tuning and eval data</a></h3>
+
+<p>
+You may have noticed that I've double-dipped, using eval data for both
+tuning (validation) and evaluation (testing). That is a no-no because
+it can lead to artificially high evaluation scores. It's like allowing
+students to study the final exam questions before the exam.
+I'm going to need to build a separate data set, structured like the
+eval data, that is specifically for use in tuning.
 </p>
 
 <p>
-exploring one hyperparameter dimension at a time (Powell's)
+Things are getting good!
 </p>
 
 <p>
-limitations in training time
-</p>
-
-<p>
-profiling
-</p>
-
-<p>
-optimization
-</p>
-
-<p>
-exploring false positives and negatives
+If you are one of the three people still reading this post series, you
+probably noticed that this installment has a lot more side quests
+and dead ends than the others. This is a sign that we're getting to the
+juicy part. Striking out into the unmapped wilderland where there are no
+signposts. Charting our own course up the mountain means plenty of trial
+and error and trial again. I decided to include it, rather than paper
+over it and pretend that progress occurs in a straight line.
 </p>
 
         <script src="javascripts/blog_signature.js"></script>

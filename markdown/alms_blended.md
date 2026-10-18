@@ -1,4 +1,4 @@
-# Version 183: Getting models to cooperate
+# Version 183: Getting models to work together
 
 We left off [the previous episode](alms_composite.html) with some mixed
 results from combining forward and backward Markov models, but with
@@ -13,14 +13,14 @@ a self-correction during dictation,
 they come up a lot. It will help broaden the set of proofreading errors
 I expect my proofreader to catch. Also, there weren't enough eval
 categories to fill up two rows of three plots in the results, and that
-was bugging me. Now we'll two full rows. (Until next chapter.)
+was bugging me. Now we'll have two full rows.
 
 ![Precision and recall for 6 evals on a  forward first-order Markov model
 ](https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_fomm_extra.png)
 
 The general form of the extra-word eval matches that of the others.
 No big revelations here. That in itself is actually forming an interesting
-pattern. These different types of errors are all quite different, so the
+pattern. These various categories of errors are all quite different, so the
 fact that they behave in a roughly similar way is notable. I don't know
 why that should be the case, but it bodes well for building one model
 that can detect them all.
@@ -111,8 +111,10 @@ for using it are still valid (less sensitivity to a single rogue model).
 And it's helpful to remember that the &beta; factor was designed specifically
 to help the minimum comparison be more meaningful. It way overestimates
 the likelihoods of tokens until a critical mass of observations have
-been collected. The success of &beta; for min suggests that maybe another
-correction might lead to a performance improvement for geometric mean.
+been collected. The success of &beta; for `min`-based combination
+suggests that maybe another
+correction might lead to a performance improvement for
+geometric mean-based model combination.
 A reasonable thing to try is the original additive smoothing approach
 (without an upward bias) which is typically represented with an
 &alpha; parameter.
@@ -134,8 +136,7 @@ the minimum-take-all combination method.
 
 ![PR curves for a forward/backward pair of models, joined via geometric mean
 with alpha=1000.
-](https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_alpha.png "PR curves for a forward/backward pair of models, joined via geometric mean
-with alpha=1000.")
+](https://raw.githubusercontent.com/brohrer/blog_images/refs/heads/main/alms_task/error_threshold_alpha.png "PR curves for a forward/backward pair of models, joined via geometric mean with alpha=1000.")
 
 I had wanted this to work because it made so much sense to me. Letting all
 of the models participate in the vote feels egalitarian. More importantly,
@@ -185,8 +186,9 @@ exhaustively trying every combination is not going to be feasible.
 A useful way to approach this is to break the large optimization problem
 down into smaller, more tractable problems, and one way to achieve this
 is by optimizing models individually before adding them together.
-One thing we're missing before we can do this is a single *optimization
-criterion*, a number that we can try to make as high (or low) as possible.
+One thing we're missing before we can do this is a single
+**optimization criterion**, a number that we can try
+to make as high (or low) as possible.
 Ideally it's a number that reflects everything we care about in one place.
 
 AUC is a reasonable step in this direction, because it combines precision
@@ -232,7 +234,8 @@ As mentioned earlier, when using the minimum combination rule for
 ensemble models, precision of the combined models will tend to be lower than
 individual models and recall will tend to be higher, but the exact behavior
 here will depend on how much overlap there is between the errors detected
-by the two models. &rho; = 1 is a good starting point, but &rho; will
+by the two models. &rho; = 1/2 is a good starting point, since a model's
+precision is more important to us than its recall, but &rho; will
 remain a hyperparameter that we can adjust to influence the final performance.
 
 ## Direction set methods: Optimizing one parameter at a time
@@ -249,14 +252,14 @@ Luckily, now that there is an optimization criterion defined we don't have
 to visualize the whole landscape. We're only interested in finding the
 highest point. This can be done by cycling through the directions
 available and traveling them one at a time, finding the highest point
-along on direction before moving on to the next. When we can cycle
+along one direction before moving on to the next. When we can cycle
 through all the directions without finding a higher point, we'll know
 we've arrived. This guarantees that
 we'll get to the top of the nearest hill, and we just have to hope
-that the hill we're on the knee of is the higihest one in the land.
+that the hill we're on the knee of is the highest one in the land.
 
 Working with a set of directions (a *direction set method*) is a good way
-to navigate when we it's not practical to calculate the gradient---when we
+to navigate when it's not practical to calculate the gradient---when we
 can't read the slope of the ground and head uphill.
 
 As a side note, this approach is the basis for
@@ -267,101 +270,104 @@ algorithmic refinements
 it makes the method more efficient for *most* problems, but it's
 possible to craft others that break it badly.
  
-## Evolutionary Powell's method
+## A tool for this job: Redsho
 
 In 2019 I needed an optimizer that, like Powell's method, was gradient-free.
-I also wanted to make it tougher. Powell's method assumes that you're
+I also wanted to make it more resilient. Powell's method assumes that you're
 already somewhere on the hill you're trying to climb; it finds the
 local optimum. Most implementations also assume that the landscape
 it's traversing is smooth. If you've ever been outdoors, you know that
-these are horribly weak assumptions to make about the world.
+these assumptions are frequently broken in the practice.
 
-I build a direction set method that overcame these weaknesses, but
+I built a direction set method that overcame these weaknesses, but
 at a cost. (There is always a cost! No lunch is free.) It requires a
 set of values to check in each direction, rather than exploring continuously.
 Another way of saying this is that it is a discrete optimizer, rather than
 a continuous optimizer. And
-it uses some random jumping to avoid getting stuck in ruts, but
+it uses some random jumping to avoid getting stuck in ruts,
+similar to simulated annealing algorithms, but
 its jumps are heavily influenced by the best options it has discovered
 so far, similar to evolutionary algorithms.
+
 This so-called
 [Evolutionary Powell's method](https://brandonrohrer.org/evopowell.html)
+sat quietly collecting dust in a repository for a few years.
+Now its moment of usefulness has come! Of course with the benefit of
+seven more years of software engineering experience, I cringed at the
+devil-may-care quality of the project and felt compelled to give it a glow up
+before using it to tune Markov models. I'm glad I did. In the process of
+refactoring and adding type hints and tests I discovered several
+disturbing bugs and failure modes. It was broken in subtle ways, but now
+it's on more solid engineering foundations, and I feel more confident
+releasing it into the Python community.
 
-share redsho
+This robust evolutionary direction set hyperparameter optimizer (Redsho)
+is now available on PyPI and in public repository services, including
+[Codeberg](https://codeberg.org/brohrer/redsho) and
+[GitHub](https://github.com/brohrer/redsho). It can be installed in any
+project with `uv add redsho` or `pip install redsho`.
+Detailed implementation instructions are in the repos' READMEs.
 
+## Tunable Markov Models
 
+Armed with an optimizer, it was time to modify the first order Markov
+model to include a tuning step. After the model is trained by counting
+unigrams and bigrams in a collection of documents, it undergoes a
+second step where it uses redsho to explore values of 
+&alpha;, &beta;, and error threshold.
+This tuning step uses performance on the evaluation data set to calculate
+precision, recall, and F-scores.
+To be more precise, I assumed an error threshold of 1 and introduced a
+scaling factor to adjust the magnitude of the errors themselves.
+This sets it up so that multiple models all come out
+of the process scaled so that their best performance occurs with an
+error cutoff of 1.
 
-https://gitlab.com/brohrer/ponderosa/-/blob/master/ponderosa/optimizers_parallel.py?ref_type=heads
-
-
-## Refactor 1: Moving the data into the package
-
-tuning
-
-eval
-
-supporting code
-
-training (not all the data)
-
-Dividing line between data and code is blurry for a model in ongoing use
-
-
-## Refactor 2: Renaming
-
-error_threshold -> scale
-
-scaled_error_threshold -> cutoff
-
-length matters
-
-accuracy matters
-
-I've changed how these are used, which changes what they mean, which means the
-old name no longer fits.
-
-
-
-## Visualizing a model's behavior at the token level
-
-https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
-
-https://en.wikipedia.org/wiki/ANSI_escape_code
-
-
-a new 2nd order before/after model?
-
-skip-gram model?
-
-bias in data - how to handle
-    racism
-    political views
-    hate speech
-    all words have a POV
-
-scale up data: wikipedia corpus
-
-exploring one hyperparameter dimension at a time (Powell's)
-
-limitations in training time
-
-profiling
-
-optimization
-
-exploring false positives and negatives
-
+An initial pass at tuning gives
+&alpha; = 2.15e-05, &beta; = 0, and error threshold = 3.59e-05 for 
+a forward model and
+&alpha; = 2.15, &beta; = 10, and error threshold = 5.99e-05 for
+a backward model. Woohoo!
 
 ## Next steps
 
-### Need more data
+We're right in the middle of this line of inquiry, but this post is
+already long, so I'm going to break it here and pick it up in the
+next post. 
 
-now we've double-dipped, using "eval" data as both tuning (validation) and
-evaluation (testing). We're going to need to build a new data set
+### Building proofreaders
 
-split current eval data into tuning and evals.
+Now that there are tunable models, the next logical step is to put them
+into proofreaders and see how they perform. With any luck they will
+have higher recall and precision. I hope.
 
-New blood: wikipedia
+### Adding more models
 
-always hungry for more data. temptation to get sloppy is strong.
+More importantly, with pre-tuned Markov models it becomes practical
+to combine more of them confidently. This opens the door to adding
+first-order models that skip words and second-order models into
+the basic forward-plus-backward model combination. This brings
+more information to bear on the proofreading decision and opens
+up the possibility of more sophisticated decisions. Hopefully this will
+start to make a dent in the grammar evals, which require the most
+context and where performance has been lagging the other evals.
+
+### Separate tuning and eval data
+
+You may have noticed that I've double-dipped, using eval data for both
+tuning (validation) and evaluation (testing). That is a no-no because
+it can lead to artificially high evaluation scores. It's like allowing
+students to study the final exam questions before the exam.
+I'm going to need to build a separate data set, structured like the
+eval data, that is specifically for use in tuning.
+
+Things are getting good!
+
+If you are one of the three people still reading this post series, you
+probably noticed that this installment has a lot more side quests
+and dead ends than the others. This is a sign that we're getting to the
+juicy part. Striking out into the unmapped wilderland where there are no
+signposts. Charting our own course up the mountain means plenty of trial
+and error and trial again. I decided to include it, rather than paper
+over it and pretend that progress occurs in a straight line.
 
