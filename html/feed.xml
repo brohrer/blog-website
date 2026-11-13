@@ -5,6 +5,957 @@
 <description>Brandon Rohrer's blog</description>
 
 
+  <item>
+    <title>
+    Artisanal Learning Models, Version 1-tuned: Getting models to work together, Part 2
+    </title>
+    <link>
+    https://brandonrohrer.org/alms_blended2.html
+    </link>
+    <pubDate>
+    Thu, 12 Nov 2026 04:36:00 EDT
+    </pubDate>
+    <guid>
+    https://brandonrohrer.org/alms_blended2.html
+    </guid>
+    <description><![CDATA[
+
+
+
+<p>
+I ended the <a href="alms_blended.html">last installation</a> with the development
+of tuned Markov models. That set things up for some exciting exploration
+with a new set of tools.
+</p>
+
+<h2><a id="Add-tuning-data"></a><a href="#Add-tuning-data">Add tuning data</a></h2>
+
+<p>
+I also called out the need for a second evaluation dataset, which I've
+been referring to as a "tuning" data set to distinguish the two.
+The first (<code>tuning</code>) dataset is for optimizing some of the
+hyperparameters via the redsho algorithm, and the second (<code>eval</code>) dataset
+is for optimizing the rest of them via manual trial-and-error. It's
+worth noting that we still lack a proper testing dataset that would
+evaluate how well the tool works on previously unseen data. I plan to
+save that for a future installment.
+</p>
+
+<p>
+The 6 categories of errors are represented by separate data files.
+</p>
+
+<ul>
+<li> <code>extra_word.py</code></li>
+<li> <code>missing_word.py</code> </li>
+<li> <code>capitalization.py</code> </li>
+<li> <code>grammar.py</code></li>
+<li> <code>punctuation.py</code></li>
+<li> <code>spelling.py</code></li>
+</ul>
+
+<p>
+Previous to this, some categories had 100 error examples and others had 50.
+To complete this initial split of tuning and eval, I fleshed out the other
+4 so that all 6 categories had 100 examples, then split them evenly so that
+there are 50 examples each in tuning and eval datasets.
+</p>
+
+<p>
+(This is easier said than done. I confess it is the most tedious part
+of this development.)
+</p>
+
+<h2><a id="Retrain-and-re-run"></a><a href="#Retrain-and-re-run">Retrain and re-run</a></h2>
+
+<p>
+With the change in tuning data set, the tunable models in play need
+to be tuned again. Also, the performance numbers now include an F-score.
+For the tuning of the models, I used F-.5, to indicate that for a single
+model recall was half as important as precision. When individual
+models are combined, precision usually goes down and recall usually
+goes up. For the composite model, I chose F-2, indicating that
+recall is twice as important as precision. It means I would happily
+allow two false positives in order to ensure an additional true
+positive. This is a design choice. I want the proofreader to be able to
+catch as many errors as possible, even if two out of every three
+reported errors ends up being a false alarm.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>capitalization</th>
+      <th>extra words</th>
+      <th>grammar</th>
+      <th>missing words</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+      <th>overall</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>017</strong><br>precision<br>  recall<br>  f-score</td>
+      <td><br>0.70<br>0.32<br>0.36</td>
+      <td><br>0.79<br>0.38<br>0.42</td>
+      <td><br>0.29<br>0.04<br>0.05</td>
+      <td><br>0.58<br>0.22<br>0.25</td>
+      <td><br>0.36<br>0.08<br>0.09</td>
+      <td><br>0.64<br>0.18<br>0.21</td>
+      <td><br>0.56<br>0.20<br><strong>0.23</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>018</strong><br>precision<br>  recall<br>  f-score</td>
+      <td><br>0.69<br>0.36<br>0.40</td>
+      <td><br>0.81<br>0.34<br>0.38</td>
+      <td><br>0.10<br>0.02<br>0.02</td>
+      <td><br>0.50<br>0.12<br>0.14</td>
+      <td><br>0.60<br>0.12<br>0.14</td>
+      <td><br>0.75<br>0.24<br>0.28</td>
+      <td><br>0.58<br>0.20<br><strong>0.23</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>019</strong><br>precision<br>  recall<br>  f-score</td>
+      <td><br>0.59<br>0.44<br>0.46</td>
+      <td><br>0.72<br>0.46<br>0.50</td>
+      <td><br>0.18<br>0.06<br>0.07</td>
+      <td><br>0.50<br>0.26<br>0.29</td>
+      <td><br>0.39<br>0.14<br>0.16</td>
+      <td><br>0.61<br>0.28<br>0.31</td>
+      <td><br>0.50<br>0.27<br><strong>0.30</strong></td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+The three proofreaders reported here are a forward first-order model, <code>017</code>:
+</p>
+
+<p>
+<pre>
+pr017, combo=min, cutoff=1.0
+    mm01, Tunable forward 1st-order Markov, alpha=4.64, beta=16, err=3.59e-05, books=38k
+        tk09, vocab=1k, books=416, norm=identity, type=unigram, ws_split=False
+</pre>
+</p>
+
+<p>
+a backward first-order model, <code>018</code>:
+</p>
+
+<p>
+<pre>
+pr018, combo=min, cutoff=1.0
+    mm03, Tunable backward 1st-order Markov, alpha=1.0, beta=0, err=3.59e-05, books=38k
+        tk09, vocab=1k, books=416, norm=identity, type=unigram, ws_split=False
+</pre>
+</p>
+
+<p>
+and a composite of the two, <code>019</code>:
+</p>
+
+<p>
+<pre>
+pr019, combo=min, cutoff=1.0
+    mm01, Tunable forward 1st-order Markov, alpha=4.64, beta=16, err=3.59e-05, books=38k
+        tk09, vocab=1k, books=416, norm=identity, type=unigram, ws_split=False
+    mm03, Tunable backward 1st-order Markov, alpha=1.0, beta=0, err=3.59e-05, books=38k
+        tk09, vocab=1k, books=416, norm=identity, type=unigram, ws_split=False
+</pre>
+</p>
+
+<p>
+This shows clearly what we had hoped: that the combination
+of individually-tuned forward and a backward models performs better than
+either individually. The overall F-scores of the individual models are both
+0.23. The F-score of the ensemble is 0.30, a 30% improvement!
+</p>
+
+<p>
+The other thing that this illustrates is that the alpha and beta values
+that fall out of the tuning process are different for each model.
+This helps show the usefulness of tuning at the model level, instead of
+the ensemble level, allowing each model to find the combination that
+works best for it in isolation before combining.
+</p>
+
+<h2><a id="Explore-tokenizer-alphabet-size"></a><a href="#Explore-tokenizer-alphabet-size">Explore tokenizer alphabet size</a></h2>
+
+<p>
+One quantity that doesn't get tuned on individual models is the alphabet
+size of the tokenizer used. That's a decision that has to be made
+before the model is created. To learn about the effects of alphabet
+size, it's necessary to create and train a new set of models each time.
+Doing this is worth the effort. It reveals some new patterns.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>alphabet</th>
+      <th>capital.</th>
+      <th>extra</th>
+      <th>grammar</th>
+      <th>missing</th>
+      <th>punct.</th>
+      <th>spelling</th>
+      <th>overall</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>022</strong> <br>precision<br>  recall<br>  f-score</td>
+      <td>10k</td>
+      <td><br>0.53<br>0.34<br>0.37</td>
+      <td><br>0.86<br>0.48<br>0.53</td>
+      <td><br>0.25<br>0.34<br>0.32</td>
+      <td><br>0.92<br>0.22<br>0.26</td>
+      <td><br>0.69<br>0.22<br>0.25</td>
+      <td><br>0.54<br>0.26<br>0.29</td>
+      <td><br>0.63<br>0.31<br><strong>0.35</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>025</strong> <br>precision<br>  recall<br>  f-score</td>
+      <td>5k</td>
+      <td><br>0.55<br>0.42<br>0.44</td>
+      <td><br>0.88<br>0.56<br>0.60</td>
+      <td><br>0.17<br>0.18<br>0.18</td>
+      <td><br>0.64<br>0.32<br>0.36</td>
+      <td><br>0.50<br>0.24<br>0.27</td>
+      <td><br>0.52<br>0.32<br>0.35</td>
+      <td><br>0.54<br>0.34<br><strong>0.37</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>028</strong> <br>precision<br>  recall<br>  f-score</td>
+      <td>2k</td>
+      <td><br>0.45<br>0.48<br>0.47</td>
+      <td><br>0.78<br>0.64<br>0.66</td>
+      <td><br>0.14<br>0.20<br>0.19</td>
+      <td><br>0.50<br>0.34<br>0.36</td>
+      <td><br>0.35<br>0.22<br>0.24</td>
+      <td><br>0.47<br>0.34<br>0.36</td>
+      <td><br>0.45<br>0.37<br><strong>0.38</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>019</strong> <br>precision<br>  recall<br>  f-score</td>
+      <td>1k</td>
+      <td><br>0.59<br>0.44<br>0.46</td>
+      <td><br>0.72<br>0.46<br>0.50</td>
+      <td><br>0.18<br>0.06<br>0.07</td>
+      <td><br>0.50<br>0.26<br>0.29</td>
+      <td><br>0.39<br>0.14<br>0.16</td>
+      <td><br>0.61<br>0.28<br>0.31</td>
+      <td><br>0.50<br>0.27<br><strong>0.30</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>031</strong> <br>precision<br>  recall<br>  f-score</td>
+      <td>500</td>
+      <td><br>0.34<br>0.40<br>0.39</td>
+      <td><br>0.48<br>0.46<br>0.46</td>
+      <td><br>0.20<br>0.18<br>0.18</td>
+      <td><br>0.38<br>0.26<br>0.28</td>
+      <td><br>0.29<br>0.30<br>0.30</td>
+      <td><br>0.31<br>0.32<br>0.32</td>
+      <td><br>0.33<br>0.32<br><strong>0.32</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>034</strong> <br>precision<br>  recall<br>  f-score</td>
+      <td>200</td>
+      <td><br>0.44<br>0.30<br>0.32</td>
+      <td><br>0.50<br>0.16<br>0.19</td>
+      <td><br>0.25<br>0.08<br>0.09</td>
+      <td><br>0.50<br>0.08<br>0.10</td>
+      <td><br>0.50<br>0.16<br>0.19</td>
+      <td><br>0.30<br>0.12<br>0.14</td>
+      <td><br>0.42<br>0.15<br><strong>0.17</strong></td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+The first thing that jumps out is that the 1k alphabet size used in the
+previous table is far from the best performing one. By overall
+F-score, the 2k alphabet beats it handily at 0.38. Another 27% jump!
+</p>
+
+<p>
+There are also some intriguing differences between categories of
+proofreading errors. Capitalization, spelling, extra words, and missing
+words all show their peak F-scores at a 2k alphabet. (Although extra
+words shows a matching F-score and considerably higher precision at 5k.)
+Punctuation shows its peak at 500, but reasonable performance across
+the spectrum. And grammar shows its peak at 10k,
+dramatically higher than at any smaller alphabet.
+</p>
+
+<p>
+This pattern is consistent with the fact that larger alphabets result in
+longer tokens, many of them having two or more words. This gives a longer
+context window, more information from which to make determinations.
+Grammar errors in particular require the ability to look ahead or behind
+for several words to determine whether the current word is a correct one.
+Spelling on the other hand, can often be evaluated very locally just
+from looking at a word in its entirety. Punctuation has a bit of both.
+Some punctuation errors require an entire phrase to learn whether or
+not a comma should be used, while the errant placement of an unusual
+punctuation symbol can almost be flagged with no context at all.
+</p>
+
+<p>
+As a side note, it becomes even clearer
+that individual models benefit from being tuned
+separately. The alpha, beta, and error threshold values vary quite a
+bit between forward and backward models and across alphabet (vocab) sizes.
+</p>
+
+<p>
+<pre>
+pr022, combo=min, cutoff=1.0
+    mm04, Tunable forward 1st-order Markov, alpha=0.000464, beta=0, err=4.64e-06, books=38k
+        tk06, vocab=10k, books=416, norm=identity, type=unigram, ws_split=False
+    mm05, Tunable backward 1st-order Markov, alpha=0.0001, beta=0, err=2.78e-06, books=38k
+        tk06, vocab=10k, books=416, norm=identity, type=unigram, ws_split=False
+pr025, combo=min, cutoff=1.0
+    mm06, Tunable forward 1st-order Markov, alpha=2.15, beta=0, err=1.29e-05, books=38k
+        tk07, vocab=5k, books=416, norm=identity, type=unigram, ws_split=False
+    mm07, Tunable backward 1st-order Markov, alpha=0.215, beta=0, err=7.74e-06, books=38k
+        tk07, vocab=5k, books=416, norm=identity, type=unigram, ws_split=False
+pr028, combo=min, cutoff=1.0
+    mm08, Tunable forward 1st-order Markov, alpha=0.215, beta=27, err=3.59e-05, books=38k
+        tk08, vocab=2k, books=416, norm=identity, type=unigram, ws_split=False
+    mm09, Tunable backward 1st-order Markov, alpha=4.64, beta=0, err=3.59e-05, books=38k
+        tk08, vocab=2k, books=416, norm=identity, type=unigram, ws_split=False
+pr019, combo=min, cutoff=1.0
+    mm01, Tunable forward 1st-order Markov, alpha=4.64, beta=16, err=3.59e-05, books=38k
+        tk09, vocab=1k, books=416, norm=identity, type=unigram, ws_split=False
+    mm03, Tunable backward 1st-order Markov, alpha=1.0, beta=0, err=3.59e-05, books=38k
+        tk09, vocab=1k, books=416, norm=identity, type=unigram, ws_split=False
+pr031, combo=min, cutoff=1.0
+    mm10, Tunable forward 1st-order Markov, alpha=4.64, beta=46, err=0.0001, books=38k
+        tk11, vocab=500, books=416, norm=identity, type=unigram, ws_split=False
+    mm11, Tunable backward 1st-order Markov, alpha=0.001, beta=0, err=0.000167, books=38k
+        tk11, vocab=500, books=416, norm=identity, type=unigram, ws_split=False
+pr034, combo=min, cutoff=1.0
+    mm12, Tunable forward 1st-order Markov, alpha=0.00464, beta=215, err=0.000167, books=38k
+        tk12, vocab=200, books=416, norm=identity, type=unigram, ws_split=False
+    mm13, Tunable backward 1st-order Markov, alpha=0.00464, beta=77, err=0.000167, books=38k
+        tk12, vocab=200, books=416, norm=identity, type=unigram, ws_split=False
+</pre>
+</p>
+
+<p>
+Taken all together, this suggests that ensemble models that include models
+with a variety of alphabet sizes may perform better still. Building this
+will require some extra work, because so far proofreaders have operated
+at the token level. This builds in the assumption that every model in
+the ensemble is using the same tokenizer, and hence, the same alphabet size.
+Combining tokenizers will require first migrating the representation of
+detected errors to the character level.
+</p>
+
+<p>
+Yet another avenue this opens up is combining tokenizers with different
+normalization options. Normalization such as collapsing whitespace,
+removing punctuation, and casting to lower case, can obscure some errors
+but accentuate others. The ability to combine models that take different
+normalization approaches can exploit the strengths of both.
+</p>
+
+<h2><a id="Skip-gram-models"></a><a href="#Skip-gram-models">Skip-gram models</a></h2>
+
+<p>
+But before we get to that, there is an even lower hanging piece of
+fruit. So far, the first-order Markov models used have looked at
+consecutive tokens&mdash;the conditional probability of token <em>n</em>, given the
+occurence of token <em>n</em>-1. There's no reason we couldn't also look at
+the relationship between token <em>n</em> and <em>n</em>-2. Or <em>n</em>-3. Or <em>n</em>-7. Skip-grams
+reveal patterns that consecutive n-grams can miss. At the very least, it's
+worth trying them out.
+</p>
+
+<p>
+Extending the models to forward and backward skip-1 first order Markov models
+shows some fun relationships.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>type</th>
+      <th>capitalization</th>
+      <th>extra words</th>
+      <th>grammar</th>
+      <th>missing words</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+      <th>overall</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>035</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>skip-1 <br> fwd</td>
+      <td><br>0.12<br>0.44<br>0.28</td>
+      <td><br>0.25<br>0.54<br>0.44</td>
+      <td><br>0.07<br>0.24<br>0.16</td>
+      <td><br>0.13<br>0.32<br>0.25</td>
+      <td><br>0.09<br>0.32<br>0.22</td>
+      <td><br>0.09<br>0.28<br>0.20</td>
+      <td><br>0.12<br>0.36<br><strong>0.26</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>036</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>skip-1 <br> bak</td>
+      <td><br>0.22<br>0.28<br>0.26</td>
+      <td><br>0.32<br>0.24<br>0.25</td>
+      <td><br>0.09<br>0.12<br>0.11</td>
+      <td><br>0.23<br>0.16<br>0.17</td>
+      <td><br>0.22<br>0.24<br>0.24</td>
+      <td><br>0.22<br>0.22<br>0.22</td>
+      <td><br>0.22<br>0.21<br><strong>0.21</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>037</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>skip-1 <br> fwd+bak</td>
+      <td><br>0.11<br>0.50<br>0.29</td>
+      <td><br>0.25<br>0.62<br>0.48</td>
+      <td><br>0.08<br>0.34<br>0.21</td>
+      <td><br>0.14<br>0.40<br>0.29</td>
+      <td><br>0.11<br>0.42<br>0.26</td>
+      <td><br>0.10<br>0.38<br>0.25</td>
+      <td><br>0.13<br>0.44<br><strong>0.30</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>028</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>skip-0 <br> fwd+bak</td>
+      <td><br>0.45<br>0.48<br>0.47</td>
+      <td><br>0.78<br>0.64<br>0.66</td>
+      <td><br>0.14<br>0.20<br>0.19</td>
+      <td><br>0.50<br>0.34<br>0.36</td>
+      <td><br>0.35<br>0.22<br>0.24</td>
+      <td><br>0.47<br>0.34<br>0.36</td>
+      <td><br>0.45<br>0.37<br><strong>0.38</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>038</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>skip-1 + <br> skip-0 <br> fwd+bak</td>
+      <td><br>0.14<br>0.66<br>0.37</td>
+      <td><br>0.27<br>0.74<br>0.55</td>
+      <td><br>0.09<br>0.38<br>0.23</td>
+      <td><br>0.17<br>0.54<br>0.37</td>
+      <td><br>0.13<br>0.54<br>0.33</td>
+      <td><br>0.13<br>0.52<br>0.32</td>
+      <td><br>0.15<br>0.56<br><strong>0.37</strong></td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Skip-1 models don't perform as well as skip-0 models, but when the two
+are combined they achieve some pretty impressive performance, at least
+in recall.
+</p>
+
+<p>
+Trying skip-2 models shows more of the same. They perform so-so
+individually. When combined with skip-1 and skip-0 models they can
+keep the F-scores comparable, but with some impressive recall numbers.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th></th>
+      <th>capitalization</th>
+      <th>extra words</th>
+      <th>grammar</th>
+      <th>missing words</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+      <th>overall</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>&nbsp; <strong>039</strong><br>skip-2<br>fwd</td>
+      <td><br>pr<br>  rec<br>  f</td>
+      <td><br>0.09<br>0.10<br>0.10</td>
+      <td><br>0.20<br>0.08<br>0.09</td>
+      <td><br>0.07<br>0.06<br>0.06</td>
+      <td><br>0.17<br>0.08<br>0.09</td>
+      <td><br>0.04<br>0.04<br>0.04</td>
+      <td><br>0.05<br>0.04<br>0.04</td>
+      <td><br>0.10<br>0.07<br><strong>0.07</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; <strong>040</strong><br>skip-2<br>back</td>
+      <td><br>pr<br>  rec<br>  f</td>
+      <td><br>0.06<br>0.20<br>0.14</td>
+      <td><br>0.12<br>0.22<br>0.19</td>
+      <td><br>0.07<br>0.20<br>0.15</td>
+      <td><br>0.10<br>0.28<br>0.20</td>
+      <td><br>0.09<br>0.26<br>0.19</td>
+      <td><br>0.08<br>0.24<br>0.17</td>
+      <td><br>0.09<br>0.23<br><strong>0.17</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; <strong>041</strong><br>skip-2<br>combo</td>
+      <td><br>pr<br>  rec<br>  f</td>
+      <td><br>0.07<br>0.28<br>0.18</td>
+      <td><br>0.12<br>0.28<br>0.22</td>
+      <td><br>0.07<br>0.24<br>0.16</td>
+      <td><br>0.10<br>0.34<br>0.23</td>
+      <td><br>0.08<br>0.28<br>0.19</td>
+      <td><br>0.07<br>0.28<br>0.18</td>
+      <td><br>0.09<br>0.28<br><strong>0.20</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; <strong>037</strong><br>skip-1<br>combo</td>
+      <td><br>pr<br>  rec<br>  f</td>
+      <td><br>0.11<br>0.50<br>0.29</td>
+      <td><br>0.25<br>0.62<br>0.48</td>
+      <td><br>0.08<br>0.34<br>0.21</td>
+      <td><br>0.14<br>0.40<br>0.29</td>
+      <td><br>0.11<br>0.42<br>0.26</td>
+      <td><br>0.10<br>0.38<br>0.25</td>
+      <td><br>0.13<br>0.44<br><strong>0.30</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; <strong>028</strong><br>skip-0<br>combo</td>
+      <td><br>pr<br>  rec<br>  f</td>
+      <td><br>0.45<br>0.48<br>0.47</td>
+      <td><br>0.78<br>0.64<br>0.66</td>
+      <td><br>0.14<br>0.20<br>0.19</td>
+      <td><br>0.50<br>0.34<br>0.36</td>
+      <td><br>0.35<br>0.22<br>0.24</td>
+      <td><br>0.47<br>0.34<br>0.36</td>
+      <td><br>0.45<br>0.37<br><strong>0.38</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; <strong>038</strong><br>skip-0+1<br>combo</td>
+      <td><br>pr<br>  rec<br>  f</td>
+      <td><br>0.14<br>0.66<br>0.37</td>
+      <td><br>0.27<br>0.74<br>0.55</td>
+      <td><br>0.09<br>0.38<br>0.23</td>
+      <td><br>0.17<br>0.54<br>0.37</td>
+      <td><br>0.13<br>0.54<br>0.33</td>
+      <td><br>0.13<br>0.52<br>0.32</td>
+      <td><br>0.15<br>0.56<br><strong>0.37</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; <strong>042</strong><br>skip-0+2<br>combo</td>
+      <td><br>pr<br>  rec<br>  f</td>
+      <td><br>0.13<br>0.62<br>0.36</td>
+      <td><br>0.25<br>0.68<br>0.51</td>
+      <td><br>0.08<br>0.38<br>0.22</td>
+      <td><br>0.16<br>0.60<br>0.39</td>
+      <td><br>0.12<br>0.46<br>0.29</td>
+      <td><br>0.11<br>0.46<br>0.28</td>
+      <td><br>0.14<br>0.53<br><strong>0.35</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; <strong>043</strong><br>skip-0+1+2<br>combo</td>
+      <td><br>pr<br>  rec<br>  f</td>
+      <td><br>0.10<br>0.74<br>0.33</td>
+      <td><br>0.18<br>0.76<br>0.46</td>
+      <td><br>0.07<br>0.50<br>0.23</td>
+      <td><br>0.13<br>0.72<br>0.37</td>
+      <td><br>0.10<br>0.64<br>0.31</td>
+      <td><br>0.09<br>0.62<br>0.29</td>
+      <td><br>0.11<br>0.66<br><strong>0.34</strong></td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Because the F-scores, our measure of overall performance, don't go up
+when including the skip-gram models, these results on their own don't
+jusitfy adding the skip-grams to the proofreader. That's OK. The real value
+here is the picture it gives about how precision and recall of two models
+are reflected in the composite model when they are combined.
+</p>
+
+<h2><a id="Combined-recall-is-higher-than-either-model's-recall"></a><a href="#Combined-recall-is-higher-than-either-model's-recall">Combined recall is higher than either model's recall</a></h2>
+
+<p>
+In the tables above, comparing two individual model rows against a third
+in which they are combined shows that recall goes up almost every time.
+If the recall of two models is dissimilar, their combination nevertheless
+has a recall that is still a bit higher than either of the two. And if the
+two models are comparable, the recall of their combined model can be almost
+double that of the individual models.
+</p>
+
+<p>
+For the proofreader this is very good news. An ideal proofreader has perfect
+recall. Every mistake is highlighted for the author to evaluate and rethink.
+Combining a wide variety of models shows promise as a way to get closer to
+perfect recall.
+</p>
+
+<h2><a id="Precision-regresses-to-the-lower-of-either-model's-precision"></a><a href="#Precision-regresses-to-the-lower-of-either-model's-precision">Precision regresses to the lower of either model's precision</a></h2>
+
+<p>
+On the other hand, the precision of a combined model falls between the
+precision of the two individual models, and it tends to be much closer
+to the lower of the two. This is fine if both models' precision is in
+an aceptable range, but if even one component model has a low precision,
+that can tank the precision of the whole ensemble.
+</p>
+
+<p>
+This suggests that we should be watching precision very carefully. If a
+model has a precision below the acceptable level it should not be included
+because it will make it very difficult for the model to recover, no matter
+how well any of the other component models perform.
+</p>
+
+<p>
+It also suggests that models with a very high precision are a waste.
+As mentioned, a precision of around one-half is acceptable. That means that
+a user of the proofreader will have half false alarms, half real errors
+flagged. I have deemed this an acceptable false positive rate for the
+user experience I am aiming for. If a model has, say, a precision of
+0.9, and gets combined with another that has a precision of 0.5, most of
+that high precision will be lost. The worst part of that is that high
+precision could have been backed off and traded for recall, which accumulates.
+</p>
+
+<h2><a id="Tuning-models-to-be-ideal-contributors-to-the-esnsemble"></a><a href="#Tuning-models-to-be-ideal-contributors-to-the-esnsemble">Tuning models to be ideal contributors to the esnsemble</a></h2>
+
+<p>
+All of this combines to suggest that individual models should be tuned
+to have precision in the desired range of the final model (say 0.5 to 0.6),
+and the maximum recall it can achieve. The current training regimen doesn't
+do this, but there are some changes that can get us closer to it.
+</p>
+
+<p>
+One tweak we can do is penalize precision when it gets too high.
+The math trick for this is to add a nonlinear transformation to precision.
+For precision less than 2/3, multiply it by 1.5, and for precision
+greater than 2/3, make it two minus 1.5 times precision.
+</p>
+
+<p>
+&rho;<sub>new</sub> = &rho; * 3/2, for &rho; &le; 2/3<br>
+&rho;<sub>new</sub> = 2 - &rho; * 3/2, for &rho; &gt; 2/3
+</p>
+
+<p>
+This transformed
+precision &rho;<sub>new</sub> reaches a maximum value
+of one when &rho;=2/3, and when &rho;=1,
+&rho;<sub>new</sub> = 0.5. When fed into the redsho optimization algorithm,
+this will tend to drive the solution to a precision of around 2/3 and,
+after reaching that constraint, a recall as high as it can reach.
+</p>
+
+<p>
+I chose the target of 2/3 to give a little breathing room above 1/2, and
+allow for noisiness in the tuning process. If that proves higher than
+necessary, I'll go back and reduce it.
+</p>
+
+<p>
+Another way to ensure proofreader performance is to put a hard limit
+on component model precision. After models are tuned, only models with
+precision higher than a floor, say 0.5, will be allowed to become part of
+the proofreader model. This check lets us train and add as many model
+variants as we like, as long as they meet this criterion, whoth reasonable
+confidence that they won't hurt the performance of the overall model.
+This second approach assumes that there will be plenty of models to
+select from with a precision greater than 0.5, but so far that's only
+aspirational. But we'll keep it in mind for when things get more mature.
+</p>
+
+<h2><a id="F-score-correction"></a><a href="#F-score-correction">F-score correction: not &rho; but &rho;<sup>2</sup> </a></h2>
+
+<p>
+Up until this point (in this very post!),
+I explained erroneously that the &rho; parameter
+in the F-&rho; score can be interpreted as a weight for recall. In fact it
+is the <em>square</em> of &rho; that is the weight. So an F-2 score actually
+weights recall four times more than precision.
+</p>
+
+<p>
+For the final top line evaluation score, where I wanted recall to be
+weighted twice as heavily as precision, I realized this requires
+a &rho; of 1.414, the square root of two. And after a round of trial and
+error, I decided to stick with a &rho; of .5 for the tuning process.
+Because the precision of one model is essentially the ceiling for precision
+of the ensemble of models, pushing it as high as possible for each
+individual model is helpful. Keeping it weighted four times heavier than
+recall produced the best results.
+</p>
+
+<p>
+During the experimentation, sadly, no combination of parameters or
+optimization approaches I tried was able to get the skip-one or skip-two
+models up to a reasonable precision. They were often down at .1 or lower.
+For now, this makes them unsuitable for use in a proofreader, but I’ll tuck
+this exploration away for future use. It’s possible that with a different
+tokenizer or larger training data set, I may be able to get
+those higher eventually
+</p>
+
+<p>
+Re-running tuning on all of the no-skip Markov models and using F-1.414 as
+the top line evaluation score, here’s what the combined forward-plus-backward
+models look like for alphabets of various sizes. Several of the precision
+values are at or near .5 which is a very pleasant surprise.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>alphabet</th>
+      <th>capital.</th>
+      <th>extra words</th>
+      <th>grammar</th>
+      <th>missing words</th>
+      <th>punct.</th>
+      <th>spelling</th>
+      <th>overall</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>046</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>20k</td>
+      <td><br>0.49<br>0.46<br>0.47</td>
+      <td><br>0.74<br>0.52<br>0.58</td>
+      <td><br>0.19<br>0.36<br>0.28</td>
+      <td><br>0.53<br>0.34<br>0.39</td>
+      <td><br>0.53<br>0.32<br>0.37</td>
+      <td><br>0.39<br>0.32<br>0.34</td>
+      <td><br>0.48<br>0.39<br><strong>0.41</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>022</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>10k</td>
+      <td><br>0.51<br>0.44<br>0.46</td>
+      <td><br>0.81<br>0.58<br>0.64</td>
+      <td><br>0.24<br>0.42<br>0.34</td>
+      <td><br>0.64<br>0.28<br>0.34</td>
+      <td><br>0.62<br>0.26<br>0.32</td>
+      <td><br>0.49<br>0.34<br>0.38</td>
+      <td><br>0.55<br>0.39<br><strong>0.43</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>025</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>5k</td>
+      <td><br>0.50<br>0.48<br>0.49</td>
+      <td><br>0.74<br>0.58<br>0.63</td>
+      <td><br>0.18<br>0.24<br>0.22</td>
+      <td><br>0.50<br>0.34<br>0.38</td>
+      <td><br>0.43<br>0.26<br>0.30</td>
+      <td><br>0.49<br>0.36<br>0.39</td>
+      <td><br>0.47<br>0.38<br><strong>0.40</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>028</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>2k</td>
+      <td><br>0.43<br>0.48<br>0.46</td>
+      <td><br>0.75<br>0.66<br>0.69</td>
+      <td><br>0.14<br>0.20<br>0.17</td>
+      <td><br>0.50<br>0.36<br>0.40</td>
+      <td><br>0.31<br>0.22<br>0.24</td>
+      <td><br>0.41<br>0.34<br>0.36</td>
+      <td><br>0.42<br>0.38<br><strong>0.39</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>019</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>1k</td>
+      <td><br>0.59<br>0.44<br>0.48</td>
+      <td><br>0.72<br>0.46<br>0.52</td>
+      <td><br>0.18<br>0.06<br>0.08</td>
+      <td><br>0.50<br>0.26<br>0.31</td>
+      <td><br>0.39<br>0.14<br>0.18</td>
+      <td><br>0.61<br>0.28<br>0.34</td>
+      <td><br>0.50<br>0.27<br><strong>0.32</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>031</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>500</td>
+      <td><br>0.34<br>0.40<br>0.38</td>
+      <td><br>0.47<br>0.46<br>0.46</td>
+      <td><br>0.20<br>0.18<br>0.19</td>
+      <td><br>0.39<br>0.28<br>0.31</td>
+      <td><br>0.29<br>0.30<br>0.30</td>
+      <td><br>0.31<br>0.32<br>0.32</td>
+      <td><br>0.33<br>0.32<br><strong>0.33</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>034</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>200</td>
+      <td><br>0.36<br>0.36<br>0.36</td>
+      <td><br>0.44<br>0.22<br>0.26</td>
+      <td><br>0.21<br>0.14<br>0.16</td>
+      <td><br>0.41<br>0.14<br>0.18</td>
+      <td><br>0.38<br>0.18<br>0.22</td>
+      <td><br>0.27<br>0.14<br>0.17</td>
+      <td><br>0.34<br>0.20<br><strong>0.23</strong></td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+It is notable
+that these tend to occur across the spectrum of alphabet sizes,
+except for the smallest alphabets. This is hopeful, because it also suggests
+that these different models may be picking up on different patterns, and
+that combining them will be fruitful. Unfortunately, this isn’t something
+that I can do yet. Combining these models at the moment requires that
+they use the same tokenizer, and therefore have the same alphabet.
+Some additional legwork will be required to combine models
+from different tokenizers.
+</p>
+
+<h2><a id="Exploring-other-tokenizer-variants"></a><a href="#Exploring-other-tokenizer-variants">Exploring other tokenizer variants</a></h2>
+
+<p>
+We have reached the place where it’s useful to do a comparison against
+some other tokenizer settings. So far, all of the tokens have used
+identity normalization (that is, they have made no pre-processing change
+to the text), unigram type tokenization, and no enforced splitting
+at word boundaries. We justified these assumptions as a starting point
+early on, but now we can actually test whether these were good choices.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>version</th>
+      <th>tokenizer</th>
+      <th>capitalization</th>
+      <th>extra words</th>
+      <th>grammar</th>
+      <th>missing words</th>
+      <th>punctuation</th>
+      <th>spelling</th>
+      <th>overall</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>022</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>no normalization</td>
+      <td><br>0.51<br>0.44<br>0.46</td>
+      <td><br>0.81<br>0.58<br>0.64</td>
+      <td><br>0.24<br>0.42<br>0.34</td>
+      <td><br>0.64<br>0.28<br>0.34</td>
+      <td><br>0.62<br>0.26<br>0.32</td>
+      <td><br>0.49<br>0.34<br>0.38</td>
+      <td><br>0.55<br>0.39<br><strong>0.43</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>049</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>byte-pair encoding (BPE)</td>
+      <td><br>0.64<br>0.54<br>0.57</td>
+      <td><br>0.91<br>0.60<br>0.68</td>
+      <td><br>0.25<br>0.30<br>0.28</td>
+      <td><br>0.75<br>0.30<br>0.38</td>
+      <td><br>0.59<br>0.26<br>0.32</td>
+      <td><br>0.47<br>0.34<br>0.38</td>
+      <td><br>0.60<br>0.39<br><strong>0.44</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>052</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>split by whitespace</td>
+      <td><br>0.50<br>0.34<br>0.38</td>
+      <td><br>0.80<br>0.40<br>0.48</td>
+      <td><br>0.24<br>0.40<br>0.32</td>
+      <td><br>0.53<br>0.20<br>0.25</td>
+      <td><br>0.63<br>0.24<br>0.30</td>
+      <td><br>0.48<br>0.32<br>0.36</td>
+      <td><br>0.53<br>0.32<br><strong>0.37</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>055</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>NFKC normalization</td>
+      <td><br>0.59<br>0.40<br>0.45</td>
+      <td><br>0.75<br>0.54<br>0.60</td>
+      <td><br>0.25<br>0.44<br>0.35</td>
+      <td><br>0.85<br>0.34<br>0.43</td>
+      <td><br>0.66<br>0.38<br>0.44</td>
+      <td><br>0.42<br>0.32<br>0.35</td>
+      <td><br>0.59<br>0.40<br><strong>0.45</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>058</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>NFKC + case folding</td>
+      <td><br>0.17<br>0.12<br>0.13</td>
+      <td><br>0.61<br>0.60<br>0.60</td>
+      <td><br>0.21<br>0.46<br>0.33</td>
+      <td><br>0.64<br>0.46<br>0.51</td>
+      <td><br>0.38<br>0.32<br>0.34</td>
+      <td><br>0.28<br>0.34<br>0.32</td>
+      <td><br>0.38<br>0.38<br><strong>0.38</strong></td>
+    </tr>
+    <tr>
+      <td>&nbsp; &nbsp; <strong>061</strong><br>precision<br>  recall<br>  f-score</td>
+      <td>NFKC + BPE</td>
+      <td><br>0.60<br>0.54<br>0.56</td>
+      <td><br>0.73<br>0.66<br>0.68</td>
+      <td><br>0.22<br>0.34<br>0.29</td>
+      <td><br>0.64<br>0.36<br>0.42</td>
+      <td><br>0.68<br>0.42<br>0.48</td>
+      <td><br>0.40<br>0.36<br>0.37</td>
+      <td><br>0.55<br>0.45<br><strong>0.48</strong></td>
+    </tr>
+ </tbody>
+</table>
+
+
+<p>
+Trying out of some of the other options available on an encoder
+with alphabet size of 10,000 showed that
+<a href="https://en.wikipedia.org/wiki/Byte-pair_encoding">byte-pair encoding</a> and
+<a href="https://en.wikipedia.org/wiki/Unicode_equivalence#Normalization">NFKC normalization</a>
+both give a modest boost in performance, and combining them helps even more,
+giving a respectable precision of 0.55, recall of 0.45, and F-score of 0.48.
+These numbers still aren't good enough to ship, but they are getting closer.
+A precision over 0.5 is good enough, but a recall of 0.45 means that it's
+missing more than half the errors :grimace-emoji:. But I'm not worried.
+Out bag of tricks is far from empty.
+</p>
+
+<h2><a id="Next-steps"></a><a href="#Next-steps">Next steps</a></h2>
+
+<p>
+In the next installment, we get to tackle the big step of combining
+the results of models that are based on different tokenizers. This has the
+potential to meld complementary strengths of different models, like a
+proofreading Voltron.
+</p>
+
+<p>
+There will be other stuff too, but honestly I'm making this up as I go along.
+We'll be surprised together.
+</p>
+
+    ]]></description>
+  </item>
 
   <item>
     <title>
@@ -512,215 +1463,6 @@ over it and pretend that progress occurs in a straight line.
 
     ]]></description>
   </item>
-
-  <item>
-    <title>
-    Working examples for redsho hyperparameter optimization
-    </title>
-    <link>
-    https://codeberg.org/brohrer/redsho-examples/src/branch/main
-    </link>
-    <pubDate>
-    Wed, 30 Sep 2026 04:36:00 EDT
-    </pubDate>
-    <guid>
-    https://codeberg.org/brohrer/redsho-examples/src/branch/main
-    </guid>
-    <description><![CDATA[
-<p>
-I recently published the
-<a href="https://codeberg.org/brohrer/redsho">redsho</a>
-package for hyperparameter optimization.
-More than anything, I want it to be useful.
-I find it helpful to start with a working example. To this end I
-created a second repo called
-<a href="https://codeberg.org/brohrer/redsho-examples/src/branch/main">redsho-examples</a>
-that walks through how to do it.
-</p>
-
-<h3>Usage</h3>
-
-<p>
-Start with an evaluation function that takes
-some hyperparameters as keyword arguments.
-</p>
-
-<pre><code>
-def evaluate(*, a, b, c):
-    return a * b**3 % c
-</code></pre>
-
-<p>
-(The leading <code>*</code> tells Python that everything that follows
-is a required keyword argument.)
-</p>
-
-<p>
-Build a collection of values to try for each parameter.
-</p>
-
-<pre><code>
-values = {
-    "a": [4, 7, 9],
-    "b": [2, 5, 6],
-    "c": [5, 8, 11],
-}
-</code></pre>
-
-<p>
-Call the optimizer.
-</p>
-
-<pre><code>
-from redsho.optimizer import optimize<br>
-error, params = optimize(evaluate, values)
-</code></pre>
-
-<p>
-where <code>error</code> is the lowest error achieved, and <code>params</code>
-is the collection of parameter values that achieved it.
-</p>
-
-<h3>Examples</h3>
-<p>
-As of right now, there are 4 examples, each in their own subdirectory:
-    <ul>
-      <li>
-        <code>sinc</code>: optimizes a 2D variant of the sinc function,
-        <em>sin(x)/x</em>
-      </li>
-      <li>
-        <code>perf</code>: tests the execution time bottleneck in redsho
-        and helps to streamline it
-      </li>
-      <li>
-        <code>xgboost_regression</code>: optimizes an XGBoost regression
-        model across a wide variety of hyperparameters and options
-      </li>
-      <li>
-        <code>xgboost_multiclass</code>: same as the previous example,
-        but with a multiclass classification problem
-      </li>
-    </ul>
-</p>
-
-<p>
-  If you generate any examples of your own that you're comfortable sharing,
-  we can add them to the list. :)
-</p>
-
-    ]]></description>
-  </item>
-
-  <item>
-    <title>
-    Required keyword args in Python
-    </title>
-    <link>
-    https://peps.python.org/pep-3102/
-    </link>
-    <pubDate>
-    Tue, 29 Sep 2026 04:36:00 EDT
-    </pubDate>
-    <guid>
-    https://peps.python.org/pep-3102/
-    </guid>
-    <description><![CDATA[
-
-<p>
-Cool Python trick I learned: Sometimes you want functions to have
-keyword arguments, but you also want them to be required.
-This is especially useful when you're passing required arguments
-using dictionary expansion, like <code>function(**arg_dict)</code>.
-</p>
-<p>
-I always did this by setting all the parameter keyword defaults to
-<code>None</code>, then checking for any <code>None</code> values in
-the function. But there's a better way: using the bare <code>*</code>
-in the argument list. Everything after the asterisk will be a required
-keyword argument.
-</p>
-<p>
-This means that now when I write
-</p>
-
-<pre><code>def sum(*, a=None, b=None):
-	return a + b
-</code></pre>
-
-<p>
-I no longer have to check that <code>a</code> and <code>b</code> are not
-<code>None</code> in the function, and I can call it with
-</p>
-
-<pre><code>arg_dict = {'a': 4, 'b': 9}
-print(sum(**arg_dict))
-</code></pre>
-
-<p>
-You can still put positional and optional keywords before the asterisk.
-</p>
-
-<pre><code>
-def estimate(a, b, verbose=False, *, method=None, n_iter=None):
-    ...
-</code></pre>
-
-<p>
-It doesn't matter what default value these required kwargs get
-because it will always be overwritten.
-</p>
-
-    ]]></description>
-  </item>
-
-  <item>
-    <title>
-    redsho: a robust hyperparameter optimizer
-    </title>
-    <link>
-    https://codeberg.org/brohrer/redsho
-    </link>
-    <pubDate>
-    Mon, 28 Sep 2026 06:36:00 EDT
-    </pubDate>
-    <guid>
-    https://codeberg.org/brohrer/redsho
-    </guid>
-    <description><![CDATA[
-
-<p>
-Optimizing models with lots of hyperparameters or functions with many options
-is a slog that usually requires a combination community wisdom, obscure
-blog posts, and tedious trial and error. Automated methods tend to either
-rely on strong assumptions of smoothness or brute force their way through
-every permutation. All of these options kind of suck.
-</p>
-
-<p style="text-align:center;">
-<img alt="Animation of Evolutionary Powell's method finding an optimum"  
-src="https://gitlab.com/brohrer/ponderosa/raw/master/ponderosa/landing_page_demo.gif"
-style="height: 350px;">
-</p>
-<p>
-I took a swing at an alternative approach called <code>redsho</code>.
-It takes a middle ground approach for when the effects of parameters and
-options can be wildly non-linear and exhaustive grid search would take
-longer than we want to spend. A full description of how it works takes
-<a href="https://brandonrohrer.at/evopowell.html">a post of its own</a>,
-but its distinguishing feature is that it is evolutionary in nature.
-It looks through the parameter combinations it has tried already and
-picks one randomly, leaning heavily toward the best performers.
-Then it chooses one of the parameters in its collection and tries a few
-random values that it hasn't tried before. This process is reflected in
-the full name: Robust Evolutionary Direction Set Hyperparameter Optimizer.
-</p>
-<p>
-Check out <a href="https://codeberg.org/brohrer/redsho">the repo</a>).
-</p>
-    ]]></description>
-  </item>
-
 
 </channel>
 </rss>
